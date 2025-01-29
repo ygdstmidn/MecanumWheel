@@ -3,17 +3,20 @@
         "**/main.cpp"
     ],
     "words": [
+        "Cplt",
         "cproject",
         "Ditel",
         "EXTI",
         "GPIOA",
         "GPIOB",
         "GPIOC",
+        "hcan",
         "huart",
         "Mbps",
         "Mecanum",
         "NUCLEO",
         "NVIC",
+        "setpowermode",
         "USART"
     ]
 }

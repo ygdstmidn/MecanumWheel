@@ -6,7 +6,7 @@
 | ------------ | ---------------- |
 | 使用マイコン | NUCLEO_F446RE    |
 | 使用IDE      | CubeIDE,VSCode   |
-| 使用言語等   | C++,STM32CubeHAL |
+| 使用言語等   | C++, STM32CubeHAL |
 
 ## 今後の目標
 全方向移動\
@@ -67,9 +67,22 @@ CAN1で通信する．
 
 ## プログラム概要
 ### setup()
-Hello WorldとPCに送信
+デバッグLEDを点灯\
+Hello WorldとPCに送信\
+PCからのデータを受信割り込み設定\
+//BNO055の初期化\
+CA1の初期化\
+デバッグLEDを消灯\
+outputDirectionを0°\
+outputSpeedは最大値の半分\
+outputRotationは0°
 ### loop()
 now = HAL_GetTick()
-#### 0.1秒ごとに
-現在の経過時間をPCに送信\
-ボタンが押されていた場合，LEDの点灯/消灯を切り替える
+#### 0.01秒ごとに
+デバッグLEDをトグル\
+//BNO055からZ軸の角加速度を取得，現在の角度の導出\
+mecanumCalc()
+### mecanumCalc()
+モーターのスピード計算\
+DitelMotor出力\
+エラーがいくつあったか返す
