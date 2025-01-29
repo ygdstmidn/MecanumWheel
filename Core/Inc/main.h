@@ -67,12 +67,20 @@ void Error_Handler(void);
 #define USART_RX_GPIO_Port GPIOA
 #define DebugLED_Pin GPIO_PIN_5
 #define DebugLED_GPIO_Port GPIOA
+#define CAN1_RX_motorDriver_Pin GPIO_PIN_11
+#define CAN1_RX_motorDriver_GPIO_Port GPIOA
+#define CAN1_TX_motorDriver_Pin GPIO_PIN_12
+#define CAN1_TX_motorDriver_GPIO_Port GPIOA
 #define TMS_Pin GPIO_PIN_13
 #define TMS_GPIO_Port GPIOA
 #define TCK_Pin GPIO_PIN_14
 #define TCK_GPIO_Port GPIOA
 #define SWO_Pin GPIO_PIN_3
 #define SWO_GPIO_Port GPIOB
+#define I2C1_SCL_BNO_Pin GPIO_PIN_8
+#define I2C1_SCL_BNO_GPIO_Port GPIOB
+#define I2C1_SDA_BNO_Pin GPIO_PIN_9
+#define I2C1_SDA_BNO_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 

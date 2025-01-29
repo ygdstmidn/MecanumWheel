@@ -9,7 +9,10 @@
         "GPIOB",
         "GPIOC",
         "huart",
+        "Mbps",
+        "Mecanum",
         "NUCLEO",
+        "NVIC",
         "USART"
     ]
 }
