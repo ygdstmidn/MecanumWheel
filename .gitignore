@@ -1,0 +1,7 @@
+Debug
+Release
+.settings
+.mxproject
+*.launch
+.vscode/c_cpp_properties.json
+*.cfg

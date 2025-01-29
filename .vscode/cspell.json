@@ -1,0 +1,15 @@
+{
+    "ignorePaths": [
+        "**/main.cpp"
+    ],
+    "words": [
+        "cproject",
+        "EXTI",
+        "GPIOA",
+        "GPIOB",
+        "GPIOC",
+        "huart",
+        "NUCLEO",
+        "USART"
+    ]
+}
