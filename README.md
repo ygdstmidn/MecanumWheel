@@ -2,10 +2,10 @@
 ## 概要
 メカナムホイールを制御する．
 
-| 項目         | 仕様             |
-| ------------ | ---------------- |
-| 使用マイコン | NUCLEO_F446RE    |
-| 使用IDE      | CubeIDE,VSCode   |
+| 項目         | 仕様              |
+| ------------ | ----------------- |
+| 使用マイコン | NUCLEO_F446RE     |
+| 使用IDE      | CubeIDE,VSCode    |
 | 使用言語等   | C++, STM32CubeHAL |
 
 ## 今後の目標
@@ -24,11 +24,13 @@
 | PB8  | I2C1_SCL    | I2C1_SCL_BNO        |                |
 | PA12 | CAN1_TX     | CAN1_TX_motorDriver |                |
 | PA11 | CAN1_RX     | CAN1_RX_motorDriver |                |
+| PC10 | USART3_TX   | USART3_TX_ESP       |                |
+| PC11 | USART3_RX   | USART3_RX_ESP       |                |
 
 
 ## クロック設定
-| 項目                   | 内容 | 備考              |
-| ---------------------- | ---- | ----------------- |
+| 項目                   | 内容 | 備考               |
+| ---------------------- | ---- | ------------------ |
 | APB1 peripheral clocks | 30   | CAN1を使いたかった |
 
 ## 変更した設定
@@ -38,6 +40,10 @@ Code Generator, Generated files\
 ### USART2
 NVIC Settings\
 ✅USART2 global interrupt
+### USART3
+MODE: Asynchronous\
+NVIC Settings\
+✅USART3 global interrupt
 ### I2C1
 MODE: I2C
 #### Parameter Settings

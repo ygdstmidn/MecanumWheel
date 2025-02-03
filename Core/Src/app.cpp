@@ -164,7 +164,7 @@ constexpr char BNO_DEFAULT_CALIBRATION[22] = {243,255,251,255,225,255,75,255,173
 
         HAL_CAN_Start(&hcan1);
         outputDirection = 0.0;
-        outputSpeed = MOTOR_MAX_SPEED;
+        outputSpeed = 0.0;
     }
 
     // MARK:loop
@@ -172,9 +172,9 @@ constexpr char BNO_DEFAULT_CALIBRATION[22] = {243,255,251,255,225,255,75,255,173
     {
         const uint32_t now = HAL_GetTick();
         static uint32_t pre = now;
-        static uint32_t pre2 = now;
+        // static uint32_t pre2 = now;
 
-        static int whichPhase = 0;
+        // static int whichPhase = 0;
 
         if (now - pre >= 10)
         {
@@ -199,29 +199,29 @@ constexpr char BNO_DEFAULT_CALIBRATION[22] = {243,255,251,255,225,255,75,255,173
             pre = now;
         }
 
-        if (now - pre2 >= 3000)
-        {
-            if (whichPhase == 0)
-            {
-                outputDirection = 180;
-            }
-            else if (whichPhase == 1)
-            {
-                outputDirection = 90;
-            }
-            else if (whichPhase == 2)
-            {
-                outputDirection = -90;
-            }
-            else
-            {
-                outputDirection = 0;
-                whichPhase = -1;
-            }
-            whichPhase++;
-            // targetYaw = ((int)targetYaw + 90) % 180;
-            pre2 = now;
-        }
+        // if (now - pre2 >= 3000)
+        // {
+        //     if (whichPhase == 0)
+        //     {
+        //         outputDirection = 180;
+        //     }
+        //     else if (whichPhase == 1)
+        //     {
+        //         outputDirection = 90;
+        //     }
+        //     else if (whichPhase == 2)
+        //     {
+        //         outputDirection = -90;
+        //     }
+        //     else
+        //     {
+        //         outputDirection = 0;
+        //         whichPhase = -1;
+        //     }
+        //     whichPhase++;
+        //     // targetYaw = ((int)targetYaw + 90) % 180;
+        //     pre2 = now;
+        // }
     }
 
     // MARK:_write (for printf)
