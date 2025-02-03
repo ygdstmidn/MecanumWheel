@@ -27,6 +27,9 @@ extern "C"
 #define MOTOR3_ADDRESS 0x03
 #define MOTOR4_ADDRESS 0x04
 
+constexpr char BNO_DEFAULT_CALIBRATION[22] = {243,255,251,255,225,255,75,255,173,255,255,255,255,255,255,255,255,255,255,255,255,255};
+//////////////////////////////////////////////243,255,251,255,225,255,72,255,205,253,208,254,000,000,002,000,255,255,255,255,255,255
+
     TripleBufferSystemClass PcUartRxTbs;
     BNO055 bno;
     VelPid rotationPid({{ROTATION_KP, ROTATION_KI, ROTATION_KD}, -MAX_ROTATION_SPEED, MAX_ROTATION_SPEED});
@@ -77,6 +80,11 @@ extern "C"
                 break;
             }
         }
+        for(int i=0;i<22;i++)
+        {
+            bno.calibration[i] = BNO_DEFAULT_CALIBRATION[i];
+        }
+        BNO055_write_calibration_data(&bno);
         HAL_GPIO_TogglePin(DebugLED_GPIO_Port, DebugLED_Pin);
         HAL_Delay(1000); // 最初の方はBNOがおかしいらしい(ほんとかよ...)
         while (HAL_GPIO_ReadPin(DebugButton_GPIO_Port, DebugButton_Pin) == GPIO_PIN_SET)
@@ -135,6 +143,21 @@ extern "C"
         {
             HAL_GPIO_TogglePin(DebugLED_GPIO_Port, DebugLED_Pin);
             HAL_Delay(100);
+        }
+        BNO055_read_calibration_data(&bno);
+        printf("calibration:");
+        for(int i = 0; i< 22; i++)
+        {
+            // printf("calibration[%d]=%d\n", i, bno.calibration[i]);
+            printf("%d,", bno.calibration[i]);
+        }
+        printf("\n");
+        for(int i = 0; i< 3; i++)
+        {
+            HAL_GPIO_WritePin(DebugLED_GPIO_Port, DebugLED_Pin, GPIO_PIN_SET);
+            HAL_Delay(500);
+            HAL_GPIO_WritePin(DebugLED_GPIO_Port, DebugLED_Pin, GPIO_PIN_RESET);
+            HAL_Delay(500);
         }
         BNO055_get_angles(&bno);
         defaultYaw = bno.euler.yaw;
