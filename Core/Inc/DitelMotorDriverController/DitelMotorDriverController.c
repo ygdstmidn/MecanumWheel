@@ -39,7 +39,8 @@ int DitelMotor(CAN_HandleTypeDef *hcan, int motor_address, int speed)
   else if (speed < -2)
     return DitelMotorDriverRotate(hcan,motor_address, DITEL_MOTOR_REVERSAL, -1 * speed);
   else
-    return DitelMotorDriverRotate(hcan,motor_address, DITEL_MOTOR_BRAKE,DITEL_NONE);
+    // return DitelMotorDriverRotate(hcan,motor_address, DITEL_MOTOR_BRAKE,DITEL_NONE);
+    return DitelMotorDriverRotate(hcan,motor_address, DITEL_MOTOR_NEUTRAL, DITEL_NONE);
 
   return 1;
 }
