@@ -32,13 +32,15 @@ extern "C"
 #define MOTOR4_ADDRESS 0x04
 #define huartEsp huart3
 
-#define right_button 14//?
-#define left_button 13//?
-#define down_button 12//?
-#define up_button 11//?
+#define right_button 14 //?
+#define left_button 13  //?
+#define down_button 12  //?
+#define up_button 11    //?
 #define break_button 1
-#define migisenkai_button 5
-#define hidarisenkai_button 4
+#define ubuntu_ps4_migisenkai_button 5
+#define ubuntu_ps4_hidarisenkai_button 4
+#define windows_switch_procon_migisenkai_button 9
+#define windows_switch_procon_hidarisenkai_button 10
 
 #define move_tate_stick 1
 #define move_yoko_stick 0
@@ -62,6 +64,13 @@ extern "C"
     int input_button[30] = {};
     int input_last_button[30] = {};
     double input_stick[20] = {};
+    enum controllerTypes
+    {
+        ps4_ubuntu,
+        ps4_windows,
+        switchProCon_windows
+    };
+    controllerTypes input_controllerType;
 
     // MARK:setup
     void user_setup(void)
@@ -220,7 +229,7 @@ extern "C"
             {
                 outputSpeed = 0;
                 outputRotation = 0;
-                targetYaw=robotYaw;
+                targetYaw = robotYaw;
                 DitelMotorDriverRotate(&hcan1, MOTOR1_ADDRESS, DITEL_MOTOR_BRAKE, DITEL_NONE);
                 DitelMotorDriverRotate(&hcan1, MOTOR2_ADDRESS, DITEL_MOTOR_BRAKE, DITEL_NONE);
                 DitelMotorDriverRotate(&hcan1, MOTOR3_ADDRESS, DITEL_MOTOR_BRAKE, DITEL_NONE);
@@ -336,7 +345,7 @@ extern "C"
             while (espUartRxTbs.read(&temp, 1, &espUartRxTbsError))
             {
                 receiveData[index] = temp;
-                if(temp=='\n')
+                if (temp == '\n')
                     break;
                 index++;
             }
@@ -348,15 +357,14 @@ extern "C"
             const int DATA_SIZE = index - 5; // 0xFF...\r\n
             receiveData[index - 1] = '\0';   //\rを\0で上書き
             index = 0;
-            printf("%d",DATA_SIZE);
+            printf("%d", DATA_SIZE);
             if (DATA_SIZE < 10 || receiveData[1] != 'x') // パケットじゃない
             {
                 return;
             }
 
             int is_button = 1;
-            // if (DATA_SIZE == 16 || DATA_SIZE == 20) // ボタンの数
-            if(DATA_SIZE==13)
+            if (DATA_SIZE == 16 || DATA_SIZE == 20 || DATA_SIZE == 13) // ボタンの数
             {
                 for (int i = 0; i < DATA_SIZE; i++)
                 {
@@ -374,6 +382,18 @@ extern "C"
 
             if (is_button == 1)
             {
+                if (DATA_SIZE == 13)
+                {
+                    input_controllerType = ps4_ubuntu;
+                }
+                else if (DATA_SIZE == 16)
+                {
+                    input_controllerType = ps4_windows;
+                }
+                else if (DATA_SIZE == 20)
+                {
+                    input_controllerType = switchProCon_windows;
+                }
                 for (int i = 0; i < DATA_SIZE; i++)
                 {
                     input_last_button[i] = input_button[i];
@@ -479,7 +499,7 @@ extern "C"
     void controller_read()
     {
         // iti_PID_ON = 0;
-        if (input_button[right_button] == 1)
+        if (input_controllerType == switchProCon_windows && input_button[right_button] == 1)
         {
             outputDirection = 90;
             outputSpeed = 1;
@@ -488,7 +508,7 @@ extern "C"
             else if (input_button[down_button] == 1)
                 outputDirection += 45;
         }
-        else if (input_button[left_button] == 1)
+        else if (input_controllerType == switchProCon_windows && input_button[left_button] == 1)
         {
             outputDirection = -90;
             outputSpeed = 1;
@@ -497,7 +517,7 @@ extern "C"
             else if (input_button[up_button] == 1)
                 outputDirection += 45;
         }
-        else if (input_button[up_button] == 1)
+        else if (input_controllerType == switchProCon_windows && input_button[up_button] == 1)
         {
             outputDirection = 0;
             outputSpeed = 1;
@@ -506,7 +526,7 @@ extern "C"
             //        else if (input_button[right_button] == 1)
             //          outputDirection -= 45;
         }
-        else if (input_button[down_button] == 1)
+        else if (input_controllerType == switchProCon_windows && input_button[down_button] == 1)
         {
             outputDirection = 180;
             outputSpeed = 1;
@@ -529,13 +549,27 @@ extern "C"
 
         outputSpeed *= MOTOR_MAX_SPEED;
 
-        if (input_button[migisenkai_button] == 1)
+        if (input_controllerType == ps4_ubuntu)
         {
-            targetYaw = robotYaw+30;
+            if (input_button[ubuntu_ps4_hidarisenkai_button] == 1)
+            {
+                targetYaw = robotYaw + 30;
+            }
+            else if (input_button[ubuntu_ps4_hidarisenkai_button] == 1)
+            {
+                targetYaw = robotYaw - 30;
+            }
         }
-        else if (input_button[hidarisenkai_button] == 1)
+        else if (input_controllerType == switchProCon_windows)
         {
-            targetYaw = robotYaw-30;
+            if (input_button[windows_switch_procon_hidarisenkai_button] == 1)
+            {
+                targetYaw = robotYaw + 30;
+            }
+            else if (input_button[windows_switch_procon_migisenkai_button] == 1)
+            {
+                targetYaw = robotYaw - 30;
+            }
         }
     } // void controller_read()
 
