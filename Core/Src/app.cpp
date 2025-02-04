@@ -15,10 +15,14 @@ extern "C"
 #define degree(x) ((x) * 180.0 / M_PI)
     int mecanumCalc();
     void PcUartRxTbsAfterSwap();
+    void espUartRxTbsAfterSwap();
+    void esp32_read();
+    void controller_read();
 
 #define PC_UART_RX_BUFFER_SIZE 256
-#define MOTOR_MAX_SPEED 100
-#define MAX_ROTATION_SPEED 50
+#define ESP_UART_RX_BUFFER_SIZE 1024
+#define MOTOR_MAX_SPEED 200
+#define MAX_ROTATION_SPEED 100
 #define ROTATION_KP 5
 #define ROTATION_KI 10
 #define ROTATION_KD 0
@@ -26,11 +30,26 @@ extern "C"
 #define MOTOR2_ADDRESS 0x02
 #define MOTOR3_ADDRESS 0x03
 #define MOTOR4_ADDRESS 0x04
+#define huartEsp huart3
 
-constexpr char BNO_DEFAULT_CALIBRATION[22] = {243,255,251,255,225,255,75,255,173,255,255,255,255,255,255,255,255,255,255,255,255,255};
-//////////////////////////////////////////////243,255,251,255,225,255,72,255,205,253,208,254,000,000,002,000,255,255,255,255,255,255
+#define right_button 14//?
+#define left_button 13//?
+#define down_button 12//?
+#define up_button 11//?
+#define break_button 1
+#define migisenkai_button 5
+#define hidarisenkai_button 4
+
+#define move_tate_stick 1
+#define move_yoko_stick 0
+
+#define stick_sikii 0.2
+
+    constexpr char BNO_DEFAULT_CALIBRATION[22] = {243, 255, 251, 255, 225, 255, 75, 255, 173, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255};
+    //////////////////////////////////////////////243,255,251,255,225,255,72,255,205,253,208,254,000,000,002,000,255,255,255,255,255,255
 
     TripleBufferSystemClass PcUartRxTbs;
+    TripleBufferSystemClass espUartRxTbs;
     BNO055 bno;
     VelPid rotationPid({{ROTATION_KP, ROTATION_KI, ROTATION_KD}, -MAX_ROTATION_SPEED, MAX_ROTATION_SPEED});
     float robotYaw = 0.0;
@@ -39,6 +58,10 @@ constexpr char BNO_DEFAULT_CALIBRATION[22] = {243,255,251,255,225,255,75,255,173
     float outputRotation;
     float outputDirection;
     float outputSpeed;
+
+    int input_button[30] = {};
+    int input_last_button[30] = {};
+    double input_stick[20] = {};
 
     // MARK:setup
     void user_setup(void)
@@ -80,11 +103,11 @@ constexpr char BNO_DEFAULT_CALIBRATION[22] = {243,255,251,255,225,255,75,255,173
                 break;
             }
         }
-        for(int i=0;i<22;i++)
-        {
-            bno.calibration[i] = BNO_DEFAULT_CALIBRATION[i];
-        }
-        BNO055_write_calibration_data(&bno);
+        // for (int i = 0; i < 22; i++)
+        // {
+        //     bno.calibration[i] = BNO_DEFAULT_CALIBRATION[i];
+        // }
+        // BNO055_write_calibration_data(&bno);
         HAL_GPIO_TogglePin(DebugLED_GPIO_Port, DebugLED_Pin);
         HAL_Delay(1000); // 最初の方はBNOがおかしいらしい(ほんとかよ...)
         while (HAL_GPIO_ReadPin(DebugButton_GPIO_Port, DebugButton_Pin) == GPIO_PIN_SET)
@@ -134,11 +157,6 @@ constexpr char BNO_DEFAULT_CALIBRATION[22] = {243,255,251,255,225,255,75,255,173
                 break;
             }
         }
-        for (int i = 0; i < 50; i++)
-        {
-            HAL_GPIO_TogglePin(DebugLED_GPIO_Port, DebugLED_Pin);
-            HAL_Delay(100);
-        }
         while (HAL_GPIO_ReadPin(DebugButton_GPIO_Port, DebugButton_Pin) == GPIO_PIN_SET)
         {
             HAL_GPIO_TogglePin(DebugLED_GPIO_Port, DebugLED_Pin);
@@ -146,13 +164,13 @@ constexpr char BNO_DEFAULT_CALIBRATION[22] = {243,255,251,255,225,255,75,255,173
         }
         BNO055_read_calibration_data(&bno);
         printf("calibration:");
-        for(int i = 0; i< 22; i++)
+        for (int i = 0; i < 22; i++)
         {
             // printf("calibration[%d]=%d\n", i, bno.calibration[i]);
             printf("%d,", bno.calibration[i]);
         }
         printf("\n");
-        for(int i = 0; i< 3; i++)
+        for (int i = 0; i < 3; i++)
         {
             HAL_GPIO_WritePin(DebugLED_GPIO_Port, DebugLED_Pin, GPIO_PIN_SET);
             HAL_Delay(500);
@@ -163,6 +181,9 @@ constexpr char BNO_DEFAULT_CALIBRATION[22] = {243,255,251,255,225,255,75,255,173
         defaultYaw = bno.euler.yaw;
 
         HAL_CAN_Start(&hcan1);
+        espUartRxTbs.init(ESP_UART_RX_BUFFER_SIZE);
+        espUartRxTbs.setFunc(__disable_irq, espUartRxTbsAfterSwap);
+        HAL_UART_Receive_IT(&huartEsp, espUartRxTbs.nextWriteBuffer(), 1); // 1byte
         outputDirection = 0.0;
         outputSpeed = 0.0;
     }
@@ -178,7 +199,7 @@ constexpr char BNO_DEFAULT_CALIBRATION[22] = {243,255,251,255,225,255,75,255,173
 
         if (now - pre >= 10)
         {
-            HAL_GPIO_TogglePin(DebugLED_GPIO_Port, DebugLED_Pin);
+            // HAL_GPIO_TogglePin(DebugLED_GPIO_Port, DebugLED_Pin);
             // printf(">now:%lu\n", now);
 
             // float gyro = BNO055_get_z_gyro(&bno);
@@ -187,12 +208,29 @@ constexpr char BNO_DEFAULT_CALIBRATION[22] = {243,255,251,255,225,255,75,255,173
             robotYaw = bno.euler.yaw - defaultYaw;
             // printf(">robotYaw:%f\n", robotYaw);
 
+            esp32_read();
+            controller_read();
+
             outputRotation = rotationPid.calc(targetYaw, robotYaw, (now - pre) / 1000.0f);
             // printf(">outputRotation:%f\n", outputRotation);
             // printf(">targetYaw:%f\n", targetYaw);
             // printf(">robotYaw:%f\n", robotYaw);
 
-            mecanumCalc();
+            if (input_button[break_button] == 1)
+            {
+                outputSpeed = 0;
+                outputRotation = 0;
+                targetYaw=robotYaw;
+                DitelMotorDriverRotate(&hcan1, MOTOR1_ADDRESS, DITEL_MOTOR_BRAKE, DITEL_NONE);
+                DitelMotorDriverRotate(&hcan1, MOTOR2_ADDRESS, DITEL_MOTOR_BRAKE, DITEL_NONE);
+                DitelMotorDriverRotate(&hcan1, MOTOR3_ADDRESS, DITEL_MOTOR_BRAKE, DITEL_NONE);
+                HAL_Delay(1);
+                DitelMotorDriverRotate(&hcan1, MOTOR4_ADDRESS, DITEL_MOTOR_BRAKE, DITEL_NONE);
+            }
+            else
+            {
+                mecanumCalc();
+            }
             // int mecanumError = mecanumCalc();
             // printf("mecanumError=%d%d%d%d\n", mecanumError & 0x08, mecanumError & 0x04, mecanumError & 0x02, mecanumError & 0x01);
 
@@ -239,6 +277,11 @@ constexpr char BNO_DEFAULT_CALIBRATION[22] = {243,255,251,255,225,255,75,255,173
             PcUartRxTbs.headMove();
             HAL_UART_Receive_IT(&huart2, PcUartRxTbs.nextWriteBuffer(), 1); // 1byte
         }
+        else if (huart == &huartEsp)
+        {
+            espUartRxTbs.headMove();
+            HAL_UART_Receive_IT(&huartEsp, espUartRxTbs.nextWriteBuffer(), 1); // 1byte
+        }
     }
 
     // MARK: mecanumCalc
@@ -271,6 +314,230 @@ constexpr char BNO_DEFAULT_CALIBRATION[22] = {243,255,251,255,225,255,75,255,173
         HAL_UART_Receive_IT(&huart2, PcUartRxTbs.nextWriteBuffer(), 1); // 1byte
         __enable_irq();
     }
+
+    // MARK: espUartRxTbsAfterSwap
+    void espUartRxTbsAfterSwap()
+    {
+        HAL_UART_AbortReceive_IT(&huartEsp);
+        HAL_UART_Receive_IT(&huartEsp, espUartRxTbs.nextWriteBuffer(), 1); // 1byte
+        __enable_irq();
+    }
+
+    // MARK: esp32_read
+    void esp32_read()
+    {
+        static uint8_t receiveData[ESP_UART_RX_BUFFER_SIZE];
+        const uint8_t *data = &receiveData[4];
+        static unsigned int index = 0;
+
+        {
+            int espUartRxTbsError;
+            uint8_t temp;
+            while (espUartRxTbs.read(&temp, 1, &espUartRxTbsError))
+            {
+                receiveData[index] = temp;
+                if(temp=='\n')
+                    break;
+                index++;
+            }
+        }
+
+        if (receiveData[index] == '\n')
+        {
+            HAL_GPIO_TogglePin(DebugLED_GPIO_Port, DebugLED_Pin);
+            const int DATA_SIZE = index - 5; // 0xFF...\r\n
+            receiveData[index - 1] = '\0';   //\rを\0で上書き
+            index = 0;
+            printf("%d",DATA_SIZE);
+            if (DATA_SIZE < 10 || receiveData[1] != 'x') // パケットじゃない
+            {
+                return;
+            }
+
+            int is_button = 1;
+            // if (DATA_SIZE == 16 || DATA_SIZE == 20) // ボタンの数
+            if(DATA_SIZE==13)
+            {
+                for (int i = 0; i < DATA_SIZE; i++)
+                {
+                    if (data[i] != '0' && data[i] != '1')
+                    {
+                        is_button = 0;
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                is_button = 0;
+            }
+
+            if (is_button == 1)
+            {
+                for (int i = 0; i < DATA_SIZE; i++)
+                {
+                    input_last_button[i] = input_button[i];
+                    input_button[i] = data[i] - '0';
+                    putchar(data[i]);
+                }
+                putchar('\n');
+                fflush(NULL);
+            }
+            else
+            {
+                // printf("%s\n",data);
+                char temp[20]; // 多分小数は20文字以上にはならない気がする
+                for (int i = 0; i < 20; i++)
+                {
+                    temp[i] = '\n';
+                }
+                size_t data_index = 0;
+                int stick_i = 0;
+                while (data[data_index] != '\0')
+                {
+                    int temp_index = 0;
+                    for (int j = 0; j <= 10; j++)
+                    {
+                        if (data[data_index] == '\0')
+                        {
+                            temp[temp_index] = '\0';
+                            break;
+                        }
+                        if (data[data_index] == '-' && 1 < j)
+                        {
+                            temp[temp_index] = '\0';
+                            break;
+                        }
+                        if (data[data_index] == '.' && 4 < j) // 次の値の小数点
+                        {
+                            temp[temp_index - 1] = '\0';
+                            data_index--;
+                            break;
+                        }
+                        temp[temp_index] = data[data_index];
+                        data_index++;
+                        temp_index++;
+                    }
+
+                    if (temp[temp_index] != '\0')
+                    {
+                        // printf("ERROR\nesp32->mbed,data_too_long\n");
+                        while (1)
+                        {
+                            if (data[data_index] == '\0')
+                            {
+                                break;
+                            }
+                            if (data[data_index] == '-')
+                            {
+                                break;
+                            }
+                            if (data[data_index] == '.') // 次の値の小数点
+                            {
+                                data_index--;
+                                break;
+                            }
+                            data_index++;
+                        }
+                    }
+
+                    temp[10] = '\0'; // 文字数制限
+                    // printf("%s\n",temp);
+                    char *endptr = NULL;
+                    errno = 0;
+                    double input = strtod(temp, &endptr);
+                    if (errno == 0 && *endptr == '\0')
+                    {
+                        if (-1 * stick_sikii < input && input < stick_sikii)
+                        {
+                            input_stick[stick_i] = 0.0;
+                        }
+                        else
+                        {
+                            if (2.0 < abs(input))
+                            {
+                                input_stick[stick_i] = 0.0;
+                                // printf("ERROR\nesp32->mbed,stick too BIG\n");
+                            }
+                            else
+                            {
+                                input_stick[stick_i] = input;
+                            }
+                        }
+                    }
+                    // printf("%d,%f\n", stick_i, input_stick[stick_i]);
+                    stick_i++;
+                }
+
+                input_stick[move_tate_stick] *= -1; // 縦のほうはプラスマイナス逆らしい(意味わからん)
+            }
+        }
+
+    } // void esp32_read()
+
+    // MARK: controller_read
+    void controller_read()
+    {
+        // iti_PID_ON = 0;
+        if (input_button[right_button] == 1)
+        {
+            outputDirection = 90;
+            outputSpeed = 1;
+            if (input_button[up_button] == 1)
+                outputDirection -= 45;
+            else if (input_button[down_button] == 1)
+                outputDirection += 45;
+        }
+        else if (input_button[left_button] == 1)
+        {
+            outputDirection = -90;
+            outputSpeed = 1;
+            if (input_button[down_button] == 1)
+                outputDirection -= 45;
+            else if (input_button[up_button] == 1)
+                outputDirection += 45;
+        }
+        else if (input_button[up_button] == 1)
+        {
+            outputDirection = 0;
+            outputSpeed = 1;
+            //        if (input_button[left_button] == 1)
+            //          outputDirection += 45;
+            //        else if (input_button[right_button] == 1)
+            //          outputDirection -= 45;
+        }
+        else if (input_button[down_button] == 1)
+        {
+            outputDirection = 180;
+            outputSpeed = 1;
+            // if(input_button[right_button] == 1)
+            //     outputDirection+=45;
+            // else if(input_button[left_button]==1)
+            //     outputDirection-=45;
+        }
+        else if (input_stick[move_tate_stick] != 0.0 || input_stick[move_yoko_stick] != 0.0)
+        { // ボタンが押されていないならスティックを読み取る
+            outputSpeed = sqrt(
+                input_stick[move_tate_stick] * input_stick[move_tate_stick] + input_stick[move_yoko_stick] * input_stick[move_yoko_stick]);
+            outputDirection = degree(
+                atan2(input_stick[move_yoko_stick], input_stick[move_tate_stick])); // atan2(y,x)
+        }
+        else
+        {
+            outputSpeed = 0; // ボタンが押されていないときは停止
+        }
+
+        outputSpeed *= MOTOR_MAX_SPEED;
+
+        if (input_button[migisenkai_button] == 1)
+        {
+            targetYaw = robotYaw+30;
+        }
+        else if (input_button[hidarisenkai_button] == 1)
+        {
+            targetYaw = robotYaw-30;
+        }
+    } // void controller_read()
 
 #ifdef __cplusplus
 }

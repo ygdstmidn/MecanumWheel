@@ -33,6 +33,10 @@ extern "C" {
 /* USER CODE BEGIN Includes */
 #include "app.h"
 #include <stdio.h>
+#include <math.h>
+#include <stdlib.h>
+// #include <cerrno>
+#include <errno.h>
 #include <BNO055-1f722ffec323/BNO055.h>
 #include <DitelMotorDriverController/DitelMotorDriverController.h>
 #include <TripleBufferSystem/TripleBufferSystem.hpp>
