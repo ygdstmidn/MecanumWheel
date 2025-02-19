@@ -18,6 +18,8 @@ extern "C"
     void espUartRxTbsAfterSwap();
     void esp32_read();
     void controller_read();
+    void BNOSetup();
+    void Brake_StopWheel();
 
 #define PC_UART_RX_BUFFER_SIZE 256
 #define ESP_UART_RX_BUFFER_SIZE 1024
@@ -78,121 +80,19 @@ extern "C"
         setbuf(stdout, NULL);
         HAL_GPIO_WritePin(DebugLED_GPIO_Port, DebugLED_Pin, GPIO_PIN_SET);
         printf("Hello World!!\n");
+
         PcUartRxTbs.init(PC_UART_RX_BUFFER_SIZE);
         PcUartRxTbs.setFunc(__disable_irq, PcUartRxTbsAfterSwap);
         HAL_UART_Receive_IT(&huart2, PcUartRxTbs.nextWriteBuffer(), 1); // 1byte
-        BNO055_init(&bno, &hi2c1);
-        while (1) // BNO055_setup
-        {
-            char bno_check = BNO055_check(&bno);
-            printf("bno_check=%d\n", bno_check);
-            if (bno_check == 0)
-            {
-                HAL_NVIC_SystemReset();
-            }
 
-            BNO055_reset(&bno);
-
-            printf("bno_ID=%02X\n", bno.ID.id);
-            // BNO055_set_orientation(&bno, WINDOWS);
-            BNO055_set_angle_units(&bno, DEGREES);
-            BNO055_setpowermode(&bno, POWER_MODE_NORMAL);
-            // BNO055_setmode(&bno, OPERATION_MODE_AMG);
-            BNO055_setmode(&bno, OPERATION_MODE_NDOF);
-            // BNO055_SetExternalCrystal(&bno, true);
-
-            char bno_state = BNO055_bno_state(&bno);
-            printf("bno_state=%02X\n", bno_state);
-            if (bno_state == 0x01)
-            {
-                printf("bno_err_state=%02X\n", BNO055_bno_err_state(&bno));
-            }
-            else
-            {
-                break;
-            }
-        }
-        // for (int i = 0; i < 22; i++)
-        // {
-        //     bno.calibration[i] = BNO_DEFAULT_CALIBRATION[i];
-        // }
-        // BNO055_write_calibration_data(&bno);
-        HAL_GPIO_TogglePin(DebugLED_GPIO_Port, DebugLED_Pin);
-        HAL_Delay(1000); // 最初の方はBNOがおかしいらしい(ほんとかよ...)
-        while (HAL_GPIO_ReadPin(DebugButton_GPIO_Port, DebugButton_Pin) == GPIO_PIN_SET)
-        {
-            BNO055_get_calib(&bno);
-            printf(">SYS Calib status:%d\n", (bno.calib >> 6) & 0x03);
-            // fflush(NULL);
-            // for(int i = 0; i< ((bno.calib >>6)&0x03); i++)//SYS Calib status
-            // {
-            //     HAL_GPIO_WritePin(DebugLED_GPIO_Port, DebugLED_Pin, GPIO_PIN_SET);
-            //     HAL_Delay(100);
-            //     HAL_GPIO_WritePin(DebugLED_GPIO_Port, DebugLED_Pin, GPIO_PIN_RESET);
-            //     HAL_Delay(100);
-            // }
-            // HAL_Delay(1000);
-            printf(">GYR Calib status:%d\n", (bno.calib >> 4) & 0x03);
-            // fflush(NULL);
-            // for(int i = 0; i< ((bno.calib >>4)&0x03); i++)//GYR Calib status
-            // {
-            //     HAL_GPIO_WritePin(DebugLED_GPIO_Port, DebugLED_Pin, GPIO_PIN_SET);
-            //     HAL_Delay(100);
-            //     HAL_GPIO_WritePin(DebugLED_GPIO_Port, DebugLED_Pin, GPIO_PIN_RESET);
-            //     HAL_Delay(100);
-            // }
-            // HAL_Delay(1000);
-            printf(">ACC Calib status:%d\n", (bno.calib >> 2) & 0x03);
-            // fflush(NULL);
-            // for(int i = 0; i< ((bno.calib >>2)&0x03); i++)//ACC Calib status
-            // {
-            //     HAL_GPIO_WritePin(DebugLED_GPIO_Port, DebugLED_Pin, GPIO_PIN_SET);
-            //     HAL_Delay(100);
-            //     HAL_GPIO_WritePin(DebugLED_GPIO_Port, DebugLED_Pin, GPIO_PIN_RESET);
-            //     HAL_Delay(100);
-            // }
-            // HAL_Delay(1000);
-            printf(">MAG Calib status:%d\n", bno.calib & 0x03);
-            fflush(NULL);
-            // for(int i = 0; i< (bno.calib & 0x03); i++)//MAG Calib status
-            // {
-            //     HAL_GPIO_WritePin(DebugLED_GPIO_Port, DebugLED_Pin, GPIO_PIN_SET);
-            //     HAL_Delay(100);
-            //     HAL_GPIO_WritePin(DebugLED_GPIO_Port, DebugLED_Pin, GPIO_PIN_RESET);
-            //     HAL_Delay(100);
-            // }
-            if ((bno.calib & 0xF3) == 0xF3)
-            {
-                break;
-            }
-        }
-        while (HAL_GPIO_ReadPin(DebugButton_GPIO_Port, DebugButton_Pin) == GPIO_PIN_SET)
-        {
-            HAL_GPIO_TogglePin(DebugLED_GPIO_Port, DebugLED_Pin);
-            HAL_Delay(100);
-        }
-        BNO055_read_calibration_data(&bno);
-        printf("calibration:");
-        for (int i = 0; i < 22; i++)
-        {
-            // printf("calibration[%d]=%d\n", i, bno.calibration[i]);
-            printf("%d,", bno.calibration[i]);
-        }
-        printf("\n");
-        for (int i = 0; i < 3; i++)
-        {
-            HAL_GPIO_WritePin(DebugLED_GPIO_Port, DebugLED_Pin, GPIO_PIN_SET);
-            HAL_Delay(500);
-            HAL_GPIO_WritePin(DebugLED_GPIO_Port, DebugLED_Pin, GPIO_PIN_RESET);
-            HAL_Delay(500);
-        }
-        BNO055_get_angles(&bno);
-        defaultYaw = bno.euler.yaw;
+        BNOSetup();
 
         HAL_CAN_Start(&hcan1);
+
         espUartRxTbs.init(ESP_UART_RX_BUFFER_SIZE);
         espUartRxTbs.setFunc(__disable_irq, espUartRxTbsAfterSwap);
         HAL_UART_Receive_IT(&huartEsp, espUartRxTbs.nextWriteBuffer(), 1); // 1byte
+
         outputDirection = 0.0;
         outputSpeed = 0.0;
     }
@@ -230,11 +130,7 @@ extern "C"
                 outputSpeed = 0;
                 outputRotation = 0;
                 targetYaw = robotYaw;
-                DitelMotorDriverRotate(&hcan1, MOTOR1_ADDRESS, DITEL_MOTOR_BRAKE, DITEL_NONE);
-                DitelMotorDriverRotate(&hcan1, MOTOR2_ADDRESS, DITEL_MOTOR_BRAKE, DITEL_NONE);
-                DitelMotorDriverRotate(&hcan1, MOTOR3_ADDRESS, DITEL_MOTOR_BRAKE, DITEL_NONE);
-                HAL_Delay(1);
-                DitelMotorDriverRotate(&hcan1, MOTOR4_ADDRESS, DITEL_MOTOR_BRAKE, DITEL_NONE);
+                Brake_StopWheel();
             }
             else
             {
@@ -572,6 +468,130 @@ extern "C"
             }
         }
     } // void controller_read()
+
+    // MARK: BNOSetup
+    /// BNOのセットアップ-this may take a while
+    void BNOSetup()
+    {
+        BNO055_init(&bno, &hi2c1);
+        while (1) // BNO055_setup
+        {
+            char bno_check = BNO055_check(&bno);
+            printf("bno_check=%d\n", bno_check);
+            if (bno_check == 0)
+            {
+                HAL_NVIC_SystemReset();
+            }
+
+            BNO055_reset(&bno);
+
+            printf("bno_ID=%02X\n", bno.ID.id);
+            // BNO055_set_orientation(&bno, WINDOWS);
+            BNO055_set_angle_units(&bno, DEGREES);
+            BNO055_setpowermode(&bno, POWER_MODE_NORMAL);
+            // BNO055_setmode(&bno, OPERATION_MODE_AMG);
+            BNO055_setmode(&bno, OPERATION_MODE_NDOF);
+            // BNO055_SetExternalCrystal(&bno, true);
+
+            char bno_state = BNO055_bno_state(&bno);
+            printf("bno_state=%02X\n", bno_state);
+            if (bno_state == 0x01)
+            {
+                printf("bno_err_state=%02X\n", BNO055_bno_err_state(&bno));
+            }
+            else
+            {
+                break;
+            }
+        }
+        // for (int i = 0; i < 22; i++)
+        // {
+        //     bno.calibration[i] = BNO_DEFAULT_CALIBRATION[i];
+        // }
+        // BNO055_write_calibration_data(&bno);
+        HAL_GPIO_TogglePin(DebugLED_GPIO_Port, DebugLED_Pin);
+        HAL_Delay(1000); // 最初の方はBNOがおかしいらしい(ほんとかよ...)
+        while (HAL_GPIO_ReadPin(DebugButton_GPIO_Port, DebugButton_Pin) == GPIO_PIN_SET)
+        {
+            BNO055_get_calib(&bno);
+            printf(">SYS Calib status:%d\n", (bno.calib >> 6) & 0x03);
+            // fflush(NULL);
+            // for(int i = 0; i< ((bno.calib >>6)&0x03); i++)//SYS Calib status
+            // {
+            //     HAL_GPIO_WritePin(DebugLED_GPIO_Port, DebugLED_Pin, GPIO_PIN_SET);
+            //     HAL_Delay(100);
+            //     HAL_GPIO_WritePin(DebugLED_GPIO_Port, DebugLED_Pin, GPIO_PIN_RESET);
+            //     HAL_Delay(100);
+            // }
+            // HAL_Delay(1000);
+            printf(">GYR Calib status:%d\n", (bno.calib >> 4) & 0x03);
+            // fflush(NULL);
+            // for(int i = 0; i< ((bno.calib >>4)&0x03); i++)//GYR Calib status
+            // {
+            //     HAL_GPIO_WritePin(DebugLED_GPIO_Port, DebugLED_Pin, GPIO_PIN_SET);
+            //     HAL_Delay(100);
+            //     HAL_GPIO_WritePin(DebugLED_GPIO_Port, DebugLED_Pin, GPIO_PIN_RESET);
+            //     HAL_Delay(100);
+            // }
+            // HAL_Delay(1000);
+            printf(">ACC Calib status:%d\n", (bno.calib >> 2) & 0x03);
+            // fflush(NULL);
+            // for(int i = 0; i< ((bno.calib >>2)&0x03); i++)//ACC Calib status
+            // {
+            //     HAL_GPIO_WritePin(DebugLED_GPIO_Port, DebugLED_Pin, GPIO_PIN_SET);
+            //     HAL_Delay(100);
+            //     HAL_GPIO_WritePin(DebugLED_GPIO_Port, DebugLED_Pin, GPIO_PIN_RESET);
+            //     HAL_Delay(100);
+            // }
+            // HAL_Delay(1000);
+            printf(">MAG Calib status:%d\n", bno.calib & 0x03);
+            fflush(NULL);
+            // for(int i = 0; i< (bno.calib & 0x03); i++)//MAG Calib status
+            // {
+            //     HAL_GPIO_WritePin(DebugLED_GPIO_Port, DebugLED_Pin, GPIO_PIN_SET);
+            //     HAL_Delay(100);
+            //     HAL_GPIO_WritePin(DebugLED_GPIO_Port, DebugLED_Pin, GPIO_PIN_RESET);
+            //     HAL_Delay(100);
+            // }
+            if ((bno.calib & 0xF3) == 0xF3)
+            {
+                break;
+            }
+        }
+        while (HAL_GPIO_ReadPin(DebugButton_GPIO_Port, DebugButton_Pin) == GPIO_PIN_SET)
+        {
+            HAL_GPIO_TogglePin(DebugLED_GPIO_Port, DebugLED_Pin);
+            HAL_Delay(100);
+        }
+        BNO055_read_calibration_data(&bno);
+        printf("calibration:");
+        for (int i = 0; i < 22; i++)
+        {
+            // printf("calibration[%d]=%d\n", i, bno.calibration[i]);
+            printf("%d,", bno.calibration[i]);
+        }
+        printf("\n");
+        for (int i = 0; i < 3; i++)
+        {
+            HAL_GPIO_WritePin(DebugLED_GPIO_Port, DebugLED_Pin, GPIO_PIN_SET);
+            HAL_Delay(500);
+            HAL_GPIO_WritePin(DebugLED_GPIO_Port, DebugLED_Pin, GPIO_PIN_RESET);
+            HAL_Delay(500);
+        }
+        BNO055_get_angles(&bno);
+        defaultYaw = bno.euler.yaw;
+    }
+
+    // MARK: Brake_StopWheel
+    /// DitelMotorDriverRotate(&hcan1, MOTORn_ADDRESS, DITEL_MOTOR_BRAKE, DITEL_NONE);
+    void Brake_StopWheel()
+    {
+        DitelMotorDriverRotate(&hcan1, MOTOR1_ADDRESS, DITEL_MOTOR_BRAKE, DITEL_NONE);
+        DitelMotorDriverRotate(&hcan1, MOTOR2_ADDRESS, DITEL_MOTOR_BRAKE, DITEL_NONE);
+        DitelMotorDriverRotate(&hcan1, MOTOR3_ADDRESS, DITEL_MOTOR_BRAKE, DITEL_NONE);
+        HAL_Delay(1);
+        DitelMotorDriverRotate(&hcan1, MOTOR4_ADDRESS, DITEL_MOTOR_BRAKE, DITEL_NONE);
+    }
 
 #ifdef __cplusplus
 }
