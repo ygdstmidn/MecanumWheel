@@ -4,3 +4,6 @@
 [submodule "Core/Inc/VelPid"]
 	path = Core/Inc/VelPid
 	url = https://gist.github.com/ygdstmidn/77419e1fb8c30b420a8754c5f07d0e93
+[submodule "Core/Inc/Encoder"]
+	path = Core/Inc/Encoder
+	url = https://github.com/ygdstmidn/Encoder.git
