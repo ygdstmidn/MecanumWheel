@@ -39,8 +39,8 @@ extern "C"
 #define break_button 1
 #define ubuntu_ps4_migisenkai_button 5
 #define ubuntu_ps4_hidarisenkai_button 4
-#define windows_switch_procon_migisenkai_button 9
-#define windows_switch_procon_hidarisenkai_button 10
+#define windows_switch_procon_migisenkai_button 10
+#define windows_switch_procon_hidarisenkai_button 9
 
 #define move_tate_stick 1
 #define move_yoko_stick 0
@@ -551,7 +551,7 @@ extern "C"
 
         if (input_controllerType == ps4_ubuntu)
         {
-            if (input_button[ubuntu_ps4_hidarisenkai_button] == 1)
+            if (input_button[ubuntu_ps4_migisenkai_button] == 1)
             {
                 targetYaw = robotYaw + 30;
             }
@@ -562,11 +562,11 @@ extern "C"
         }
         else if (input_controllerType == switchProCon_windows)
         {
-            if (input_button[windows_switch_procon_hidarisenkai_button] == 1)
+            if (input_button[windows_switch_procon_migisenkai_button] == 1)
             {
                 targetYaw = robotYaw + 30;
             }
-            else if (input_button[windows_switch_procon_migisenkai_button] == 1)
+            else if (input_button[windows_switch_procon_hidarisenkai_button] == 1)
             {
                 targetYaw = robotYaw - 30;
             }

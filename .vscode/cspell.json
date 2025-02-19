@@ -17,6 +17,7 @@
         "Mecanum",
         "NUCLEO",
         "NVIC",
+        "procon",
         "setpowermode",
         "USART"
     ]
