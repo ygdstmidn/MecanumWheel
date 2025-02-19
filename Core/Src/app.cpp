@@ -36,7 +36,7 @@ extern "C"
 #define left_button 13  //?
 #define down_button 12  //?
 #define up_button 11    //?
-#define break_button 1
+#define brake_button 1
 #define ubuntu_ps4_migisenkai_button 5
 #define ubuntu_ps4_hidarisenkai_button 4
 #define windows_switch_procon_migisenkai_button 10
@@ -225,7 +225,7 @@ extern "C"
             // printf(">targetYaw:%f\n", targetYaw);
             // printf(">robotYaw:%f\n", robotYaw);
 
-            if (input_button[break_button] == 1)
+            if (input_button[brake_button] == 1)
             {
                 outputSpeed = 0;
                 outputRotation = 0;
