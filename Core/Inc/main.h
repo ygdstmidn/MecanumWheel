@@ -69,12 +69,24 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define DebugButton_Pin GPIO_PIN_13
 #define DebugButton_GPIO_Port GPIOC
+#define Encoder2_1_Pin GPIO_PIN_0
+#define Encoder2_1_GPIO_Port GPIOA
+#define Encoder2_2_Pin GPIO_PIN_1
+#define Encoder2_2_GPIO_Port GPIOA
 #define USART_TX_Pin GPIO_PIN_2
 #define USART_TX_GPIO_Port GPIOA
 #define USART_RX_Pin GPIO_PIN_3
 #define USART_RX_GPIO_Port GPIOA
 #define DebugLED_Pin GPIO_PIN_5
 #define DebugLED_GPIO_Port GPIOA
+#define Encoder3_1_Pin GPIO_PIN_6
+#define Encoder3_1_GPIO_Port GPIOA
+#define Encoder3_2_Pin GPIO_PIN_7
+#define Encoder3_2_GPIO_Port GPIOA
+#define Encoder1_1_Pin GPIO_PIN_8
+#define Encoder1_1_GPIO_Port GPIOA
+#define Encoder1_2_Pin GPIO_PIN_9
+#define Encoder1_2_GPIO_Port GPIOA
 #define CAN1_RX_motorDriver_Pin GPIO_PIN_11
 #define CAN1_RX_motorDriver_GPIO_Port GPIOA
 #define CAN1_TX_motorDriver_Pin GPIO_PIN_12
@@ -89,6 +101,10 @@ void Error_Handler(void);
 #define USART3_RX_ESP_GPIO_Port GPIOC
 #define SWO_Pin GPIO_PIN_3
 #define SWO_GPIO_Port GPIOB
+#define Encoder4_1_Pin GPIO_PIN_6
+#define Encoder4_1_GPIO_Port GPIOB
+#define Encoder4_2_Pin GPIO_PIN_7
+#define Encoder4_2_GPIO_Port GPIOB
 #define I2C1_SCL_BNO_Pin GPIO_PIN_8
 #define I2C1_SCL_BNO_GPIO_Port GPIOB
 #define I2C1_SDA_BNO_Pin GPIO_PIN_9

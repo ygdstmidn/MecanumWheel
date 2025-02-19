@@ -26,7 +26,14 @@
 | PA11 | CAN1_RX     | CAN1_RX_motorDriver |                |
 | PC10 | USART3_TX   | USART3_TX_ESP       |                |
 | PC11 | USART3_RX   | USART3_RX_ESP       |                |
-
+| PA8  | TIM1_CH1    | Encoder1_1          |                |
+| PA9  | TIM1_CH2    | Encoder1_2          |                |
+| PA0  | TIM2_CH1    | Encoder2_1          |                |
+| PA1  | TIM2_CH2    | Encoder2_2          |                |
+| PA6  | TIM3_CH1    | Encoder3_1          |                |
+| PA7  | TIM3_CH2    | Encoder3_2          |                |
+| PB6  | TIM4_CH1    | Encoder4_1          |                |
+| PB7  | TIM4_CH2    | Encoder4_2          |                |
 
 ## クロック設定
 | 項目                   | 内容 | 備考               |
@@ -70,6 +77,19 @@ CAN1で通信する．
 | TSeg1                      | 7     |
 | TSeg2                      | 2     |
 | SJW                        | 1     |
+
+### TIM1
+Combined Channels : Encoder Mode\
+ロータリーエンコーダを使うための設定[参考文献](https://www.shujima.work/entry/2019/05/28/221629#%E3%82%A8%E3%83%B3%E3%82%B3%E3%83%BC%E3%83%80%E3%81%AE%E3%83%94%E3%83%B3%E8%A8%AD%E5%AE%9A)
+#### Parameter Settings
+##### Encoder
+Encoder Mode : Encoder Mode TI1 and TI2
+### TIM2
+設定はTIM1と同じ
+### TIM3
+設定はTIM1と同じ
+### TIM4
+設定はTIM1と同じ
 
 ## プログラム概要
 ### setup()
