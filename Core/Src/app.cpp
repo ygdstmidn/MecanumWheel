@@ -8,6 +8,7 @@ extern "C"
 #include "main.h"
 #include "can.h"
 #include "i2c.h"
+#include "tim.h"
 #include "usart.h"
 #include "gpio.h"
 
@@ -54,6 +55,10 @@ extern "C"
 
     TripleBufferSystemClass PcUartRxTbs;
     TripleBufferSystemClass espUartRxTbs;
+    Encoder encoder1(&htim1);
+    Encoder encoder2(&htim2);
+    Encoder encoder3(&htim3);
+    Encoder encoder4(&htim4);
     BNO055 bno;
     VelPid rotationPid({{ROTATION_KP, ROTATION_KI, ROTATION_KD}, -MAX_ROTATION_SPEED, MAX_ROTATION_SPEED});
     float robotYaw = 0.0;
@@ -85,13 +90,18 @@ extern "C"
         PcUartRxTbs.setFunc(__disable_irq, PcUartRxTbsAfterSwap);
         HAL_UART_Receive_IT(&huart2, PcUartRxTbs.nextWriteBuffer(), 1); // 1byte
 
-        BNOSetup();
+        BNOSetup();//This may take a while
 
         HAL_CAN_Start(&hcan1);
 
         espUartRxTbs.init(ESP_UART_RX_BUFFER_SIZE);
         espUartRxTbs.setFunc(__disable_irq, espUartRxTbsAfterSwap);
         HAL_UART_Receive_IT(&huartEsp, espUartRxTbs.nextWriteBuffer(), 1); // 1byte
+
+        encoder1.start();
+        encoder2.start();
+        encoder3.start();
+        encoder4.start();
 
         outputDirection = 0.0;
         outputSpeed = 0.0;
@@ -116,6 +126,15 @@ extern "C"
             BNO055_get_angles(&bno);
             robotYaw = bno.euler.yaw - defaultYaw;
             // printf(">robotYaw:%f\n", robotYaw);
+
+            int32_t encoder1Speed = encoder1.getSpeed();
+            int32_t encoder2Speed = encoder2.getSpeed();
+            int32_t encoder3Speed = encoder3.getSpeed();
+            int32_t encoder4Speed = encoder4.getSpeed();
+            printf(">encoder1Speed:%ld\n", encoder1Speed);
+            printf(">encoder2Speed:%ld\n", encoder2Speed);
+            printf(">encoder3Speed:%ld\n", encoder3Speed);
+            printf(">encoder4Speed:%ld\n", encoder4Speed);
 
             esp32_read();
             controller_read();

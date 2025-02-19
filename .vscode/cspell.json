@@ -12,13 +12,19 @@
         "GPIOB",
         "GPIOC",
         "hcan",
+        "hidarisenkai",
+        "htim",
         "huart",
+        "mbed",
         "Mbps",
         "Mecanum",
+        "migisenkai",
+        "NDOF",
         "NUCLEO",
         "NVIC",
         "procon",
         "setpowermode",
+        "sikii",
         "USART"
     ]
 }

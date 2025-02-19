@@ -41,6 +41,7 @@ extern "C" {
 #include <DitelMotorDriverController/DitelMotorDriverController.h>
 #include <TripleBufferSystem/TripleBufferSystem.hpp>
 #include <VelPid/VelPid.hpp>
+#include <Encoder/Encoder.hpp>
 
 /* USER CODE END Includes */
 
