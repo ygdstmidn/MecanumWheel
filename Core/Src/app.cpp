@@ -26,14 +26,32 @@ extern "C"
 #define ESP_UART_RX_BUFFER_SIZE 1024
 #define MOTOR_MAX_SPEED 200
 #define MAX_ROTATION_SPEED 100
-#define ROTATION_KP 5
-#define ROTATION_KI 10
-#define ROTATION_KD 0
 #define MOTOR1_ADDRESS 0x01
 #define MOTOR2_ADDRESS 0x02
 #define MOTOR3_ADDRESS 0x03
 #define MOTOR4_ADDRESS 0x04
 #define huartEsp huart3
+#define MAIN_LOOP_PERIOD 0.01
+
+#define ROTATION_KP 5
+#define ROTATION_KI 10
+#define ROTATION_KD 0
+
+#define M1_KP 0
+#define M1_KI 0.1
+#define M1_KD 0
+
+#define M2_KP 0
+#define M2_KI 0.1
+#define M2_KD 0
+
+#define M3_KP 0
+#define M3_KI 0.1
+#define M3_KD 0
+
+#define M4_KP 0
+#define M4_KI 0.1
+#define M4_KD 0
 
 #define right_button 14 //?
 #define left_button 13  //?
@@ -61,6 +79,10 @@ extern "C"
     Encoder encoder4(&htim4, 16);
     BNO055 bno;
     VelPid rotationPid({{ROTATION_KP, ROTATION_KI, ROTATION_KD}, -MAX_ROTATION_SPEED, MAX_ROTATION_SPEED});
+    VelPid motor1SpeedPid({{M1_KP, M1_KI, M1_KD}, -MOTOR_MAX_SPEED, MOTOR_MAX_SPEED});
+    VelPid motor2SpeedPid({{M2_KP, M2_KI, M2_KD}, -MOTOR_MAX_SPEED, MOTOR_MAX_SPEED});
+    VelPid motor3SpeedPid({{M3_KP, M3_KI, M3_KD}, -MOTOR_MAX_SPEED, MOTOR_MAX_SPEED});
+    VelPid motor4SpeedPid({{M4_KP, M4_KI, M4_KD}, -MOTOR_MAX_SPEED, MOTOR_MAX_SPEED});
     float robotYaw = 0.0;
     float targetYaw = 0.0;
     float defaultYaw;
@@ -116,7 +138,7 @@ extern "C"
 
         // static int whichPhase = 0;
 
-        if (now - pre >= 10)
+        if (now - pre >= MAIN_LOOP_PERIOD * 1000)
         {
             // HAL_GPIO_TogglePin(DebugLED_GPIO_Port, DebugLED_Pin);
             // printf(">now:%lu\n", now);
@@ -127,14 +149,14 @@ extern "C"
             // robotYaw = bno.euler.yaw - defaultYaw;
             // // printf(">robotYaw:%f\n", robotYaw);
 
-            int32_t encoder1Speed = encoder1.getSpeed();
-            int32_t encoder2Speed = encoder2.getSpeed();
-            int32_t encoder3Speed = encoder3.getSpeed();
-            int32_t encoder4Speed = encoder4.getSpeed();
-            printf(">encoder1Speed:%ld\n", encoder1Speed);
-            printf(">encoder2Speed:%ld\n", encoder2Speed);
-            printf(">encoder3Speed:%ld\n", encoder3Speed);
-            printf(">encoder4Speed:%ld\n", encoder4Speed);
+            // int32_t encoder1Speed = encoder1.getSpeed();
+            // int32_t encoder2Speed = encoder2.getSpeed();
+            // int32_t encoder3Speed = encoder3.getSpeed();
+            // int32_t encoder4Speed = encoder4.getSpeed();
+            // printf(">encoder1Speed:%ld\n", encoder1Speed);
+            // printf(">encoder2Speed:%ld\n", encoder2Speed);
+            // printf(">encoder3Speed:%ld\n", encoder3Speed);
+            // printf(">encoder4Speed:%ld\n", encoder4Speed);
 
             outputSpeed = MOTOR_MAX_SPEED;
             outputDirection = 0;
@@ -218,10 +240,32 @@ extern "C"
         // メカナムホイールのつき方によって変わる
         // int motor1Speed = cos(radian(outputDirection - 45)) * outputSpeed - outputRotation;
         // int motor2Speed = cos(radian(outputDirection + 45)) * outputSpeed + outputRotation;
-        int motor1Speed = cos(radian(outputDirection + 45)) * outputSpeed - outputRotation;
-        int motor2Speed = cos(radian(outputDirection - 45)) * outputSpeed + outputRotation;
-        int motor3Speed = motor1Speed + 2 * outputRotation;
-        int motor4Speed = motor2Speed - 2 * outputRotation;
+        float motor1Speed = cos(radian(outputDirection + 45)) * outputSpeed - outputRotation;
+        float motor2Speed = cos(radian(outputDirection - 45)) * outputSpeed + outputRotation;
+        float motor3Speed = motor1Speed + 2 * outputRotation;
+        float motor4Speed = motor2Speed - 2 * outputRotation;
+        printf(">motor1Speed:%f\n", motor1Speed);
+        printf(">motor2Speed:%f\n", motor2Speed);
+        printf(">motor3Speed:%f\n", motor3Speed);
+        printf(">motor4Speed:%f\n", motor4Speed);
+
+        int32_t encoder1Speed = encoder1.getSpeed();
+        int32_t encoder2Speed = encoder2.getSpeed();
+        int32_t encoder3Speed = encoder3.getSpeed();
+        int32_t encoder4Speed = encoder4.getSpeed();
+        printf(">encoder1Speed:%ld\n", encoder1Speed);
+        printf(">encoder2Speed:%ld\n", encoder2Speed);
+        printf(">encoder3Speed:%ld\n", encoder3Speed);
+        printf(">encoder4Speed:%ld\n", encoder4Speed);
+
+        int motor1output = motor1SpeedPid.calc(motor1Speed, encoder1Speed, MAIN_LOOP_PERIOD / 1000.0);
+        int motor2output = motor2SpeedPid.calc(motor2Speed, encoder2Speed, MAIN_LOOP_PERIOD / 1000.0);
+        int motor3output = motor3SpeedPid.calc(motor3Speed, encoder3Speed, MAIN_LOOP_PERIOD / 1000.0);
+        int motor4output = motor4SpeedPid.calc(motor4Speed, encoder4Speed, MAIN_LOOP_PERIOD / 1000.0);
+        printf(">motor1output:%d\n", motor1output);
+        printf(">motor2output:%d\n", motor2output);
+        printf(">motor3output:%d\n", motor3output);
+        printf(">motor4output:%d\n", motor4output);
 
         int errorCheck = 0;
         errorCheck += DitelMotor(&hcan1, MOTOR1_ADDRESS, motor1Speed);
