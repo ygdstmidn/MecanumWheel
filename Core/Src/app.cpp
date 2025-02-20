@@ -90,7 +90,7 @@ extern "C"
         PcUartRxTbs.setFunc(__disable_irq, PcUartRxTbsAfterSwap);
         HAL_UART_Receive_IT(&huart2, PcUartRxTbs.nextWriteBuffer(), 1); // 1byte
 
-        BNOSetup();//This may take a while
+        // BNOSetup();//This may take a while
 
         HAL_CAN_Start(&hcan1);
 
@@ -121,11 +121,13 @@ extern "C"
             // HAL_GPIO_TogglePin(DebugLED_GPIO_Port, DebugLED_Pin);
             // printf(">now:%lu\n", now);
 
-            // float gyro = BNO055_get_z_gyro(&bno);
-            // robotYaw -= gyro * (now - pre) / 1000.0f;
-            BNO055_get_angles(&bno);
-            robotYaw = bno.euler.yaw - defaultYaw;
-            // printf(">robotYaw:%f\n", robotYaw);
+            // // float gyro = BNO055_get_z_gyro(&bno);
+            // // robotYaw -= gyro * (now - pre) / 1000.0f;
+            // BNO055_get_angles(&bno);
+            // robotYaw = bno.euler.yaw - defaultYaw;
+            // // printf(">robotYaw:%f\n", robotYaw);
+
+
 
             int32_t encoder1Speed = encoder1.getSpeed();
             int32_t encoder2Speed = encoder2.getSpeed();
@@ -136,27 +138,31 @@ extern "C"
             printf(">encoder3Speed:%ld\n", encoder3Speed);
             printf(">encoder4Speed:%ld\n", encoder4Speed);
 
-            esp32_read();
-            controller_read();
+            outputSpeed = MOTOR_MAX_SPEED;
+            outputDirection = 0;
+            mecanumCalc();
 
-            outputRotation = rotationPid.calc(targetYaw, robotYaw, (now - pre) / 1000.0f);
-            // printf(">outputRotation:%f\n", outputRotation);
-            // printf(">targetYaw:%f\n", targetYaw);
-            // printf(">robotYaw:%f\n", robotYaw);
+            // esp32_read();
+            // controller_read();
 
-            if (input_button[brake_button] == 1)
-            {
-                outputSpeed = 0;
-                outputRotation = 0;
-                targetYaw = robotYaw;
-                Brake_StopWheel();
-            }
-            else
-            {
-                mecanumCalc();
-            }
-            // int mecanumError = mecanumCalc();
-            // printf("mecanumError=%d%d%d%d\n", mecanumError & 0x08, mecanumError & 0x04, mecanumError & 0x02, mecanumError & 0x01);
+            // outputRotation = rotationPid.calc(targetYaw, robotYaw, (now - pre) / 1000.0f);
+            // // printf(">outputRotation:%f\n", outputRotation);
+            // // printf(">targetYaw:%f\n", targetYaw);
+            // // printf(">robotYaw:%f\n", robotYaw);
+
+            // if (input_button[brake_button] == 1)
+            // {
+            //     outputSpeed = 0;
+            //     outputRotation = 0;
+            //     targetYaw = robotYaw;
+            //     Brake_StopWheel();
+            // }
+            // else
+            // {
+            //     mecanumCalc();
+            // }
+            // // int mecanumError = mecanumCalc();
+            // // printf("mecanumError=%d%d%d%d\n", mecanumError & 0x08, mecanumError & 0x04, mecanumError & 0x02, mecanumError & 0x01);
 
             pre = now;
         }
