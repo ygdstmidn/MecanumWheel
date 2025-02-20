@@ -55,10 +55,10 @@ extern "C"
 
     TripleBufferSystemClass PcUartRxTbs;
     TripleBufferSystemClass espUartRxTbs;
-    Encoder encoder1(&htim1);
-    Encoder encoder2(&htim2);
-    Encoder encoder3(&htim3);
-    Encoder encoder4(&htim4);
+    Encoder encoder1(&htim1, 16);
+    Encoder encoder2(&htim2, 32);
+    Encoder encoder3(&htim3, 16);
+    Encoder encoder4(&htim4, 16);
     BNO055 bno;
     VelPid rotationPid({{ROTATION_KP, ROTATION_KI, ROTATION_KD}, -MAX_ROTATION_SPEED, MAX_ROTATION_SPEED});
     float robotYaw = 0.0;
@@ -126,8 +126,6 @@ extern "C"
             // BNO055_get_angles(&bno);
             // robotYaw = bno.euler.yaw - defaultYaw;
             // // printf(">robotYaw:%f\n", robotYaw);
-
-
 
             int32_t encoder1Speed = encoder1.getSpeed();
             int32_t encoder2Speed = encoder2.getSpeed();
