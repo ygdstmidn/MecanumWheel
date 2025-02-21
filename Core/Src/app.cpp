@@ -26,6 +26,7 @@ extern "C"
 #define ESP_UART_RX_BUFFER_SIZE 1024
 #define MOTOR_MAX_SPEED 200
 #define MAX_ROTATION_SPEED 100
+#define WHEEL_SPEED 200
 #define MOTOR1_ADDRESS 0x01
 #define MOTOR2_ADDRESS 0x02
 #define MOTOR3_ADDRESS 0x03
@@ -37,20 +38,20 @@ extern "C"
 #define ROTATION_KI 10
 #define ROTATION_KD 0
 
-#define M1_KP 0
-#define M1_KI 0.1
+#define M1_KP 1.5
+#define M1_KI 100
 #define M1_KD 0
 
-#define M2_KP 0
-#define M2_KI 0.1
+#define M2_KP 1.5
+#define M2_KI 10
 #define M2_KD 0
 
-#define M3_KP 0
-#define M3_KI 0.1
+#define M3_KP 1.5
+#define M3_KI 10
 #define M3_KD 0
 
-#define M4_KP 0
-#define M4_KI 0.1
+#define M4_KP 1.5
+#define M4_KI 10
 #define M4_KD 0
 
 #define right_button 14 //?
@@ -112,7 +113,7 @@ extern "C"
         PcUartRxTbs.setFunc(__disable_irq, PcUartRxTbsAfterSwap);
         HAL_UART_Receive_IT(&huart2, PcUartRxTbs.nextWriteBuffer(), 1); // 1byte
 
-        // BNOSetup();//This may take a while
+        BNOSetup(); // This may take a while
 
         HAL_CAN_Start(&hcan1);
 
@@ -142,12 +143,13 @@ extern "C"
         {
             // HAL_GPIO_TogglePin(DebugLED_GPIO_Port, DebugLED_Pin);
             // printf(">now:%lu\n", now);
+            // printf(">dt:%lu\n", now - pre);
 
-            // // float gyro = BNO055_get_z_gyro(&bno);
-            // // robotYaw -= gyro * (now - pre) / 1000.0f;
-            // BNO055_get_angles(&bno);
-            // robotYaw = bno.euler.yaw - defaultYaw;
-            // // printf(">robotYaw:%f\n", robotYaw);
+            // float gyro = BNO055_get_z_gyro(&bno);
+            // robotYaw -= gyro * (now - pre) / 1000.0f;
+            BNO055_get_angles(&bno);
+            robotYaw = bno.euler.yaw - defaultYaw;
+            // printf(">robotYaw:%f\n", robotYaw);
 
             // int32_t encoder1Speed = encoder1.getSpeed();
             // int32_t encoder2Speed = encoder2.getSpeed();
@@ -158,31 +160,32 @@ extern "C"
             // printf(">encoder3Speed:%ld\n", encoder3Speed);
             // printf(">encoder4Speed:%ld\n", encoder4Speed);
 
-            outputSpeed = MOTOR_MAX_SPEED;
-            outputDirection = 0;
-            mecanumCalc();
+            esp32_read();
+            controller_read();
 
-            // esp32_read();
-            // controller_read();
-
-            // outputRotation = rotationPid.calc(targetYaw, robotYaw, (now - pre) / 1000.0f);
-            // // printf(">outputRotation:%f\n", outputRotation);
-            // // printf(">targetYaw:%f\n", targetYaw);
-            // // printf(">robotYaw:%f\n", robotYaw);
-
-            // if (input_button[brake_button] == 1)
+            // for (int i = 0; i < 6; i++)
             // {
-            //     outputSpeed = 0;
-            //     outputRotation = 0;
-            //     targetYaw = robotYaw;
-            //     Brake_StopWheel();
+            //     printf(">st%d:%f\n", i, input_stick[i]);
             // }
-            // else
-            // {
-            //     mecanumCalc();
-            // }
-            // // int mecanumError = mecanumCalc();
-            // // printf("mecanumError=%d%d%d%d\n", mecanumError & 0x08, mecanumError & 0x04, mecanumError & 0x02, mecanumError & 0x01);
+
+            outputRotation = rotationPid.calc(targetYaw, robotYaw, (now - pre) / 1000.0f);
+            // printf(">outputRotation:%f\n", outputRotation);
+            // printf(">targetYaw:%f\n", targetYaw);
+            // printf(">robotYaw:%f\n", robotYaw);
+
+            if (input_button[brake_button] == 1)
+            {
+                outputSpeed = 0;
+                outputRotation = 0;
+                targetYaw = robotYaw;
+                Brake_StopWheel();
+            }
+            else
+            {
+                mecanumCalc();
+            }
+            // int mecanumError = mecanumCalc();
+            // printf("mecanumError=%d%d%d%d\n", mecanumError & 0x08, mecanumError & 0x04, mecanumError & 0x02, mecanumError & 0x01);
 
             pre = now;
         }
@@ -244,38 +247,38 @@ extern "C"
         float motor2Speed = cos(radian(outputDirection - 45)) * outputSpeed + outputRotation;
         float motor3Speed = motor1Speed + 2 * outputRotation;
         float motor4Speed = motor2Speed - 2 * outputRotation;
-        printf(">motor1Speed:%f\n", motor1Speed);
-        printf(">motor2Speed:%f\n", motor2Speed);
-        printf(">motor3Speed:%f\n", motor3Speed);
-        printf(">motor4Speed:%f\n", motor4Speed);
+        // printf(">motor1Speed:%f\n", motor1Speed);
+        // printf(">motor2Speed:%f\n", motor2Speed);
+        // printf(">motor3Speed:%f\n", motor3Speed);
+        // printf(">motor4Speed:%f\n", motor4Speed);
 
         int32_t encoder1Speed = encoder1.getSpeed();
         int32_t encoder2Speed = encoder2.getSpeed();
         int32_t encoder3Speed = encoder3.getSpeed();
         int32_t encoder4Speed = encoder4.getSpeed();
-        printf(">encoder1Speed:%ld\n", encoder1Speed);
-        printf(">encoder2Speed:%ld\n", encoder2Speed);
-        printf(">encoder3Speed:%ld\n", encoder3Speed);
-        printf(">encoder4Speed:%ld\n", encoder4Speed);
+        // printf(">encoder1Speed:%ld\n", encoder1Speed);
+        // printf(">encoder2Speed:%ld\n", encoder2Speed);
+        // printf(">encoder3Speed:%ld\n", encoder3Speed);
+        // printf(">encoder4Speed:%ld\n", encoder4Speed);
 
         int motor1output = motor1SpeedPid.calc(motor1Speed, encoder1Speed, MAIN_LOOP_PERIOD / 1000.0);
         int motor2output = motor2SpeedPid.calc(motor2Speed, encoder2Speed, MAIN_LOOP_PERIOD / 1000.0);
         int motor3output = motor3SpeedPid.calc(motor3Speed, encoder3Speed, MAIN_LOOP_PERIOD / 1000.0);
         int motor4output = motor4SpeedPid.calc(motor4Speed, encoder4Speed, MAIN_LOOP_PERIOD / 1000.0);
-        printf(">motor1output:%d\n", motor1output);
-        printf(">motor2output:%d\n", motor2output);
-        printf(">motor3output:%d\n", motor3output);
-        printf(">motor4output:%d\n", motor4output);
+        // printf(">motor1output:%d\n", motor1output);
+        // printf(">motor2output:%d\n", motor2output);
+        // printf(">motor3output:%d\n", motor3output);
+        // printf(">motor4output:%d\n", motor4output);
 
         int errorCheck = 0;
-        errorCheck += DitelMotor(&hcan1, MOTOR1_ADDRESS, motor1Speed);
+        errorCheck += DitelMotor(&hcan1, MOTOR1_ADDRESS, motor1output);
         errorCheck = errorCheck << 1;
-        errorCheck += DitelMotor(&hcan1, MOTOR2_ADDRESS, motor2Speed);
+        errorCheck += DitelMotor(&hcan1, MOTOR2_ADDRESS, motor2output);
         errorCheck = errorCheck << 1;
-        errorCheck += DitelMotor(&hcan1, MOTOR3_ADDRESS, motor3Speed);
+        errorCheck += DitelMotor(&hcan1, MOTOR3_ADDRESS, motor3output);
         errorCheck = errorCheck << 1;
         HAL_Delay(1);
-        errorCheck += DitelMotor(&hcan1, MOTOR4_ADDRESS, motor4Speed);
+        errorCheck += DitelMotor(&hcan1, MOTOR4_ADDRESS, motor4output);
         return errorCheck;
     }
 
@@ -510,7 +513,7 @@ extern "C"
             outputSpeed = 0; // ボタンが押されていないときは停止
         }
 
-        outputSpeed *= MOTOR_MAX_SPEED;
+        outputSpeed *= WHEEL_SPEED;
 
         if (input_controllerType == ps4_ubuntu)
         {
