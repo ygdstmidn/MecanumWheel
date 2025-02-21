@@ -16,13 +16,16 @@ extern "C"
     int mecanumCalc();
     void PcUartRxTbsAfterSwap();
     void espUartRxTbsAfterSwap();
+    void arduinoUartRxTbsAfterSwap();
     void esp32_read();
     void controller_read();
     void BNOSetup();
     void Brake_StopWheel();
+    void arduino_read();
 
 #define PC_UART_RX_BUFFER_SIZE 256
 #define ESP_UART_RX_BUFFER_SIZE 1024
+#define ARDUINO_UART_RX_BUFFER_SIZE 256
 #define MOTOR_MAX_SPEED 200
 #define MAX_ROTATION_SPEED 100
 #define ROTATION_KP 5
@@ -33,6 +36,7 @@ extern "C"
 #define MOTOR3_ADDRESS 0x03
 #define MOTOR4_ADDRESS 0x04
 #define huartEsp huart3
+#define huartArduino huart6
 
 #define right_button 14 //?
 #define left_button 13  //?
@@ -54,6 +58,7 @@ extern "C"
 
     TripleBufferSystemClass PcUartRxTbs;
     TripleBufferSystemClass espUartRxTbs;
+    TripleBufferSystemClass arduinoUartRxTbs;
     BNO055 bno;
     VelPid rotationPid({{ROTATION_KP, ROTATION_KI, ROTATION_KD}, -MAX_ROTATION_SPEED, MAX_ROTATION_SPEED});
     float robotYaw = 0.0;
@@ -66,6 +71,7 @@ extern "C"
     int input_button[30] = {};
     int input_last_button[30] = {};
     double input_stick[20] = {};
+    int input_arduino = 1;
     enum controllerTypes
     {
         ps4_ubuntu,
@@ -92,6 +98,10 @@ extern "C"
         espUartRxTbs.init(ESP_UART_RX_BUFFER_SIZE);
         espUartRxTbs.setFunc(__disable_irq, espUartRxTbsAfterSwap);
         HAL_UART_Receive_IT(&huartEsp, espUartRxTbs.nextWriteBuffer(), 1); // 1byte
+
+        arduinoUartRxTbs.init(ARDUINO_UART_RX_BUFFER_SIZE);
+        arduinoUartRxTbs.setFunc(__disable_irq, arduinoUartRxTbsAfterSwap);
+        HAL_UART_Receive_IT(&huartArduino, arduinoUartRxTbs.nextWriteBuffer(), 1); // 1byte
 
         outputDirection = 0.0;
         outputSpeed = 0.0;
@@ -120,12 +130,14 @@ extern "C"
             esp32_read();
             controller_read();
 
+            arduino_read();
+
             outputRotation = rotationPid.calc(targetYaw, robotYaw, (now - pre) / 1000.0f);
             // printf(">outputRotation:%f\n", outputRotation);
             // printf(">targetYaw:%f\n", targetYaw);
             // printf(">robotYaw:%f\n", robotYaw);
 
-            if (input_button[brake_button] == 1)
+            if (input_button[brake_button] == 1 || input_arduino == 0)
             {
                 outputSpeed = 0;
                 outputRotation = 0;
@@ -187,6 +199,11 @@ extern "C"
             espUartRxTbs.headMove();
             HAL_UART_Receive_IT(&huartEsp, espUartRxTbs.nextWriteBuffer(), 1); // 1byte
         }
+        else if (huart == &huartArduino)
+        {
+            arduinoUartRxTbs.headMove();
+            HAL_UART_Receive_IT(&huartArduino, arduinoUartRxTbs.nextWriteBuffer(), 1); // 1byte
+        }
     }
 
     // MARK: mecanumCalc
@@ -225,6 +242,14 @@ extern "C"
     {
         HAL_UART_AbortReceive_IT(&huartEsp);
         HAL_UART_Receive_IT(&huartEsp, espUartRxTbs.nextWriteBuffer(), 1); // 1byte
+        __enable_irq();
+    }
+
+    // MARK: arduinoUartRxTbsAfterSwap
+    void arduinoUartRxTbsAfterSwap()
+    {
+        HAL_UART_AbortReceive_IT(&huartArduino);
+        HAL_UART_Receive_IT(&huartArduino, arduinoUartRxTbs.nextWriteBuffer(), 1); // 1byte
         __enable_irq();
     }
 
@@ -591,6 +616,27 @@ extern "C"
         DitelMotorDriverRotate(&hcan1, MOTOR3_ADDRESS, DITEL_MOTOR_BRAKE, DITEL_NONE);
         HAL_Delay(1);
         DitelMotorDriverRotate(&hcan1, MOTOR4_ADDRESS, DITEL_MOTOR_BRAKE, DITEL_NONE);
+    }
+
+    // MARK: arduino_read
+    void arduino_read()
+    {
+        uint8_t receiveData;
+        int arduinoUartRxTbsError;
+        int receiveDataSize = arduinoUartRxTbs.read(&receiveData, 1, &arduinoUartRxTbsError);
+        if (receiveDataSize == 1)
+        {
+            // printf(">arduino:%d\n", receiveData);
+            if (receiveData == 0x02)
+            {
+                uint8_t sendData = outputSpeed * 99.0f / (float)MOTOR_MAX_SPEED;
+                HAL_UART_Transmit(&huartArduino, &sendData, 1, 10);
+            }
+            else
+            {
+                input_arduino = receiveData;
+            }
+        }
     }
 
 #ifdef __cplusplus
