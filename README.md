@@ -34,6 +34,8 @@
 | PA7  | TIM3_CH2    | Encoder3_2          |                |
 | PB6  | TIM4_CH1    | Encoder4_1          |                |
 | PB7  | TIM4_CH2    | Encoder4_2          |                |
+| PC6  | USART6_TX   | USART6_TX_Arduino   |                |
+| PC7  | USART6_RX   | USART6_RX_Arduino   |                |
 
 ## クロック設定
 | 項目                   | 内容 | 備考               |
@@ -51,6 +53,10 @@ NVIC Settings\
 MODE: Asynchronous\
 NVIC Settings\
 ✅USART3 global interrupt
+### USART6
+MODE: Asynchronous\
+NVIC Settings\
+✅USART6 global interrupt
 ### I2C1
 MODE: I2C
 #### Parameter Settings
