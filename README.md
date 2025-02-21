@@ -102,19 +102,94 @@ Encoder Mode : Encoder Mode TI1 and TI2
 デバッグLEDを点灯\
 Hello WorldとPCに送信\
 PCからのデータを受信割り込み設定\
-//BNO055の初期化\
+BNO055の初期化\
 CA1の初期化\
-デバッグLEDを消灯\
+ESP32からのデータを受信割り込み設定\
+arduinoからのデータを受信割り込み設定\
 outputDirectionを0°\
-outputSpeedは最大値の半分\
-outputRotationは0°
+outputSpeedは0
+
 ### loop()
 now = HAL_GetTick()
-#### 0.01秒ごとに
-デバッグLEDをトグル\
-//BNO055からZ軸の角加速度を取得，現在の角度の導出\
-mecanumCalc()
+
+#### 10msごとに
+BNO055からヨーを取得し，ロボットの現在の角度の導出\
+esp32_read()により，espからコントローラの状態を取得\
+controller_read()により，コントローラの状態を解析\
+arduino_read()により，arduinoからの信号を読む\
+現在の角度と目標角度からPIDでoutputRotationを計算\
+コントローラのブレーキボタンが押された，input_arduinoが0である場合\
+　　ブレーキをかける．\
+　　目標角度を現在の角度に設定\
+　　outputSpeedを0に設定\
+　　outputRotationを0に設定\
+それ以外は\
+　　mecanumCalc()でメカナムを動かす
+
 ### mecanumCalc()
-モーターのスピード計算\
+outputDirection，outputSpeed，outputRotationから各モーターのスピード計算\
 DitelMotor出力\
 エラーがいくつあったか返す
+
+### esp32_read()
+espUartRxTbsに入ったデータを取り出す．\
+\nを取得したとき，パケットの末尾としてみなす．\
+\nを所得した後，そのパケットを解析する．\
+input_buttonにボタンの状態を，input_stickにスティックの状態を格納する．\
+パケットがボタンデータだった場合，ボタンの数からコントローラの種類を予測して設定する．
+
+### controller_read()
+コントローラの状態を解析する．\
+マクロで定義されたボタンが押されている時に対応するoutputDirection，outputSpeed，targetYawを設定する．\
+この関数では，コントローラの種類によって分岐する場所がある．
+
+### arduino_read()
+arduinoUartRxTbsに入ったデータを取り出す．\
+0x02だった場合，arduinoにoutputSpeedを0～99の値で送信する．\
+他の場合，ブレーキon/offの信号であるため，フラグを立てる．(input_arduino)
+
+### BNOSetup()
+BNO055関係\
+初期化．\
+チェックする．→PCに出力\
+チェック結果が良くない場合，ソフトウェアリセット\
+リセットする．\
+BNOのIDをPCに出力\
+角度の単位をdegreeに設定\
+電源モードをNormalに設定\
+使用モードをNDOFに設定(9軸フュージョンモード)\
+ステータスを所得．→PCに出力\
+ステータスがエラーだった場合\
+　　エラーを取得．→PCに出力\
+問題ない場合はbreak;，エラーだった場合はチェックからやりなおし．\
+デバッグLED消灯．\
+1秒待つ．\
+ここから，キャリブレーションに入る．\
+キャリブレーションの状況を取得．\
+SYS GYR ACC MAGのキャリブレーション状況をPCに出力．\
+キャリブレーションのステータスがACC以外3になるまで繰り返す．\
+このキャリブレーションはデバッグボタンを押すことでスキップできる．\
+キャリブレーションが終わった後，100msごとにデバッグLEDを点滅させて知らせる．\
+デバッグボタンを押すと3回長く点滅し，次の処理へ移行する．\
+この時，PCに今回のキャリブレーションデータを送信する．\
+現在の角度を取得する．\
+取得した角度をdefaultYawに設定する．
+
+よって，LEDが点灯中はBNO設定中→LEDが消灯することでキャリブレーションへ移行
+→LEDが点滅するまでキャリブレーション→望みの角度に合わせてデバッグボタンを押す\
+という流れになる．
+
+### Brake_StopWheel()
+ホイールを止める．
+
+### PcUartRxTbsAfterSwap()
+TripleBufferSystemに必要な関数．割り込みを設定しなおし，割り込みを有効にする．
+### espUartRxTbsAfterSwap()
+TripleBufferSystemに必要な関数．割り込みを設定しなおし，割り込みを有効にする．
+### arduinoUartRxTbsAfterSwap()
+TripleBufferSystemに必要な関数．割り込みを設定しなおし，割り込みを有効にする．
+
+### HAL_UART_RxCpltCallback()
+割り込み処理関数．\
+TripleBufferSystemを使っている\
+対応するtbsをheadMove()し，新しい割り込みを設定する．
