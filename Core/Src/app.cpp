@@ -26,11 +26,11 @@ extern "C"
 #define PC_UART_RX_BUFFER_SIZE 256
 #define ESP_UART_RX_BUFFER_SIZE 1024
 #define ARDUINO_UART_RX_BUFFER_SIZE 256
-#define MOTOR_MAX_SPEED 200
+#define MOTOR_MAX_SPEED 50
 #define MAX_ROTATION_SPEED 100
-#define ROTATION_KP 5
-#define ROTATION_KI 10
-#define ROTATION_KD 0
+#define ROTATION_KP 2
+#define ROTATION_KI 0
+#define ROTATION_KD 0.1
 #define MOTOR1_ADDRESS 0x01
 #define MOTOR2_ADDRESS 0x02
 #define MOTOR3_ADDRESS 0x03
@@ -71,7 +71,7 @@ extern "C"
     int input_button[30] = {};
     int input_last_button[30] = {};
     double input_stick[20] = {};
-    int input_arduino = 1;
+    // int input_arduino = 1;
     enum controllerTypes
     {
         ps4_ubuntu,
@@ -137,7 +137,7 @@ extern "C"
             // printf(">targetYaw:%f\n", targetYaw);
             // printf(">robotYaw:%f\n", robotYaw);
 
-            if (input_button[brake_button] == 1 || input_arduino == 0)
+            if (input_button[brake_button] == 1)
             {
                 outputSpeed = 0;
                 outputRotation = 0;
@@ -210,12 +210,15 @@ extern "C"
     int mecanumCalc()
     {
         // メカナムホイールのつき方によって変わる
-        // int motor1Speed = cos(radian(outputDirection - 45)) * outputSpeed - outputRotation;
-        // int motor2Speed = cos(radian(outputDirection + 45)) * outputSpeed + outputRotation;
-        int motor1Speed = cos(radian(outputDirection + 45)) * outputSpeed - outputRotation;
-        int motor2Speed = cos(radian(outputDirection - 45)) * outputSpeed + outputRotation;
-        int motor3Speed = motor1Speed + 2 * outputRotation;
-        int motor4Speed = motor2Speed - 2 * outputRotation;
+        // // int motor1Speed = cos(radian(outputDirection - 45)) * outputSpeed - outputRotation;
+        // // int motor2Speed = cos(radian(outputDirection + 45)) * outputSpeed + outputRotation;
+        // int motor1Speed = cos(radian(outputDirection + 45)) * outputSpeed - outputRotation;
+        // int motor2Speed = cos(radian(outputDirection - 45)) * outputSpeed + outputRotation;
+        // int motor3Speed = motor1Speed + 2 * outputRotation;
+        // int motor4Speed = motor2Speed - 2 * outputRotation;
+        float motor1Speed = cos(radian(outputDirection + 30)) * outputSpeed - outputRotation;
+        float motor2Speed = cos(radian(outputDirection + 150)) * outputSpeed - outputRotation;
+        float motor3Speed = cos(radian(outputDirection + 270)) * outputSpeed - outputRotation;
 
         int errorCheck = 0;
         errorCheck += DitelMotor(&hcan1, MOTOR1_ADDRESS, motor1Speed);
@@ -223,9 +226,9 @@ extern "C"
         errorCheck += DitelMotor(&hcan1, MOTOR2_ADDRESS, motor2Speed);
         errorCheck = errorCheck << 1;
         errorCheck += DitelMotor(&hcan1, MOTOR3_ADDRESS, motor3Speed);
-        errorCheck = errorCheck << 1;
-        HAL_Delay(1);
-        errorCheck += DitelMotor(&hcan1, MOTOR4_ADDRESS, motor4Speed);
+        // errorCheck = errorCheck << 1;
+        // HAL_Delay(1);
+        // errorCheck += DitelMotor(&hcan1, MOTOR4_ADDRESS, motor4Speed);
         return errorCheck;
     }
 
@@ -634,7 +637,7 @@ extern "C"
             }
             else
             {
-                input_arduino = receiveData;
+                // input_arduino = receiveData;
             }
         }
     }
