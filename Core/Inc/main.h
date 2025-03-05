@@ -83,10 +83,16 @@ void Error_Handler(void);
 #define Encoder3_1_GPIO_Port GPIOA
 #define Encoder3_2_Pin GPIO_PIN_7
 #define Encoder3_2_GPIO_Port GPIOA
+#define TIM12_CH1_SERVO1_Pin GPIO_PIN_14
+#define TIM12_CH1_SERVO1_GPIO_Port GPIOB
+#define TIM12_CH2_SERVO2_Pin GPIO_PIN_15
+#define TIM12_CH2_SERVO2_GPIO_Port GPIOB
 #define USART6_TX_Arduino_Pin GPIO_PIN_6
 #define USART6_TX_Arduino_GPIO_Port GPIOC
 #define USART6_RX_Arduino_Pin GPIO_PIN_7
 #define USART6_RX_Arduino_GPIO_Port GPIOC
+#define TIM8_CH3_SERVO3_Pin GPIO_PIN_8
+#define TIM8_CH3_SERVO3_GPIO_Port GPIOC
 #define Encoder1_1_Pin GPIO_PIN_8
 #define Encoder1_1_GPIO_Port GPIOA
 #define Encoder1_2_Pin GPIO_PIN_9

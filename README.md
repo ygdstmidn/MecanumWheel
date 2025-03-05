@@ -36,6 +36,9 @@
 | PB7  | TIM4_CH2    | Encoder4_2          |                |
 | PC6  | USART6_TX   | USART6_TX_Arduino   |                |
 | PC7  | USART6_RX   | USART6_RX_Arduino   |                |
+| PB14 | TIM12_CH1   | TIM12_CH1_SERVO1    |                |
+| PB15 | TIM12_CH2   | TIM12_CH2_SERVO2    |                |
+| PC8  | TIM8_CH3    | TIM8_CH3_SERVO3     |                |
 
 ## クロック設定
 | 項目                   | 内容 | 備考               |
@@ -96,6 +99,29 @@ Encoder Mode : Encoder Mode TI1 and TI2
 設定はTIM1と同じ
 ### TIM4
 設定はTIM1と同じ
+
+### TIM8
+Channel 3 : PWM Generation CH3
+#### Parameter Settings
+| 項目           | 設定    | 備考                                          |
+| -------------- | ------- | --------------------------------------------- |
+| ベースクロック | 60[MHz] |                                               |
+| 目標周波数     | 50[Hz]  |                                               |
+| PWM周期        | 20[ms]  | 20000[μs]                                     |
+| Prescaler      | 59      |                                               |
+| Counter Period | 19999   | これで，0~20000，つまり μ秒単位で指定できる． |
+[パラメータ計算](https://ja.wolframalpha.com/input?i2d=true&i=Divide%5B60*Power%5B10%2C6%5D%2C%5C%2840%2919999%2B1%5C%2841%29*%5C%2840%2959%2B1%5C%2841%29%5D)
+
+参考文献\
+https://moons.link/post-632\
+https://qiita.com/ShunHattori/items/68f099f1d77702d2535d\
+https://tekuteku-embedded.xyz/2023/03/13/stm32-pwm-hal
+
+### TIM12
+Channel 1 : PWM Generation CH1\
+Channel 2 : PWM Generation CH2
+#### Parameter Settings
+TIM8と同じ
 
 ## プログラム概要
 ### setup()
