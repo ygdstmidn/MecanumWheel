@@ -10,6 +10,7 @@ extern "C"
 #include "i2c.h"
 #include "usart.h"
 #include "gpio.h"
+#include "tim.h"
 
 #define radian(x) ((x) * M_PI / 180.0)
 #define degree(x) ((x) * 180.0 / M_PI)
@@ -38,6 +39,13 @@ extern "C"
 #define huartEsp huart3
 #define huartArduino huart6
 
+#define htimServo1 htim12
+#define timChannelServo1 TIM_CHANNEL_1
+#define htimServo2 htim12
+#define timChannelServo2 TIM_CHANNEL_2
+#define htimServo3 htim8
+#define timChannelServo3 TIM_CHANNEL_3
+
 #define right_button 14 //?
 #define left_button 13  //?
 #define down_button 12  //?
@@ -52,6 +60,13 @@ extern "C"
 #define move_yoko_stick 0
 
 #define stick_sikii 0.2
+
+#define SERVO_MAX 2400
+#define SERVO_MIN 500
+#define SERVO_MID ((SERVO_MAX + SERVO_MIN) / 2)
+#define SERVO_DEG 90
+#define SERVO_PPD ((SERVO_MAX - SERVO_MID) / SERVO_DEG) // pulse per degree
+#define SERVO_GetPulse(degree) (SERVO_MID + (degree) * SERVO_PPD)
 
     constexpr char BNO_DEFAULT_CALIBRATION[22] = {243, 255, 251, 255, 225, 255, 75, 255, 173, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255};
     //////////////////////////////////////////////243,255,251,255,225,255,72,255,205,253,208,254,000,000,002,000,255,255,255,255,255,255
@@ -103,6 +118,13 @@ extern "C"
         arduinoUartRxTbs.setFunc(__disable_irq, arduinoUartRxTbsAfterSwap);
         HAL_UART_Receive_IT(&huartArduino, arduinoUartRxTbs.nextWriteBuffer(), 1); // 1byte
 
+        HAL_TIM_PWM_Start(&htimServo1, timChannelServo1);
+        __HAL_TIM_SET_COMPARE(&htimServo1, timChannelServo1, SERVO_GetPulse(0));
+        HAL_TIM_PWM_Start(&htimServo2, timChannelServo2);
+        __HAL_TIM_SET_COMPARE(&htimServo2, timChannelServo2, SERVO_GetPulse(0));
+        HAL_TIM_PWM_Start(&htimServo3, timChannelServo3);
+        __HAL_TIM_SET_COMPARE(&htimServo3, timChannelServo3, SERVO_GetPulse(0));
+
         outputDirection = 0.0;
         outputSpeed = 0.0;
     }
@@ -118,6 +140,69 @@ extern "C"
 
         if (now - pre >= 10)
         {
+            static int servo1 = 0;
+            static int servo2 = 0;
+            static int servo3 = 0;
+            unsigned char readFromPc;
+            int PcUartRxTbsError;
+            if (PcUartRxTbs.read(&readFromPc, 1, &PcUartRxTbsError) == 1)
+            {
+                switch (readFromPc)
+                {
+                case 'w':
+                    servo1 += 1;
+                    if (servo1 > 90)
+                    {
+                        servo1 = 90;
+                    }
+                    break;
+                case 's':
+                    servo1 -= 1;
+                    if (servo1 < 0)
+                    {
+                        servo1 = 0;
+                    }
+                    break;
+                case 'e':
+                    servo2 += 1;
+                    if (servo2 > 90)
+                    {
+                        servo2 = 90;
+                    }
+                    break;
+                case 'd':
+                    servo2 -= 1;
+                    if (servo2 < 0)
+                    {
+                        servo2 = 0;
+                    }
+                    break;
+                case 'r':
+                    servo3 += 1;
+                    if (servo3 > 90)
+                    {
+                        servo3 = 90;
+                    }
+                    break;
+                case 'f':
+                    servo3 -= 1;
+                    if (servo3 < 0)
+                    {
+                        servo3 = 0;
+                    }
+                    break;
+                default:
+                    break;
+                }
+                __HAL_TIM_SET_COMPARE(&htimServo1, timChannelServo1, SERVO_GetPulse(servo1));
+                __HAL_TIM_SET_COMPARE(&htimServo2, timChannelServo2, SERVO_GetPulse(servo2));
+                __HAL_TIM_SET_COMPARE(&htimServo3, timChannelServo3, SERVO_GetPulse(servo3));
+                printf(">servo1:%d\n", servo1);
+                printf(">servo2:%d\n", servo2);
+                printf(">servo3:%d\n", servo3);
+            }
+
+#if (0)
             // HAL_GPIO_TogglePin(DebugLED_GPIO_Port, DebugLED_Pin);
             // printf(">now:%lu\n", now);
 
@@ -150,7 +235,7 @@ extern "C"
             }
             // int mecanumError = mecanumCalc();
             // printf("mecanumError=%d%d%d%d\n", mecanumError & 0x08, mecanumError & 0x04, mecanumError & 0x02, mecanumError & 0x01);
-
+#endif
             pre = now;
         }
 
