@@ -45,6 +45,8 @@ extern "C"
 #define timChannelServo2 TIM_CHANNEL_2
 #define htimServo3 htim8
 #define timChannelServo3 TIM_CHANNEL_3
+#define SERVO1_CLOSE 0
+#define SERVO1_OPEN 54
 
 #define right_button 14 //?
 #define left_button 13  //?
@@ -119,7 +121,7 @@ extern "C"
         HAL_UART_Receive_IT(&huartArduino, arduinoUartRxTbs.nextWriteBuffer(), 1); // 1byte
 
         HAL_TIM_PWM_Start(&htimServo1, timChannelServo1);
-        __HAL_TIM_SET_COMPARE(&htimServo1, timChannelServo1, SERVO_GetPulse(0));
+        __HAL_TIM_SET_COMPARE(&htimServo1, timChannelServo1, SERVO_GetPulse(SERVO1_CLOSE));
         HAL_TIM_PWM_Start(&htimServo2, timChannelServo2);
         __HAL_TIM_SET_COMPARE(&htimServo2, timChannelServo2, SERVO_GetPulse(0));
         HAL_TIM_PWM_Start(&htimServo3, timChannelServo3);
@@ -150,17 +152,13 @@ extern "C"
                 switch (readFromPc)
                 {
                 case 'w':
-                    servo1 += 1;
-                    if (servo1 > 90)
+                    if (servo1 ==SERVO1_CLOSE)
                     {
-                        servo1 = 90;
+                        servo1 = SERVO1_OPEN;
                     }
-                    break;
-                case 's':
-                    servo1 -= 1;
-                    if (servo1 < 0)
+                    else
                     {
-                        servo1 = 0;
+                        servo1 = SERVO1_CLOSE;
                     }
                     break;
                 case 'e':
