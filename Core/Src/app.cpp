@@ -27,9 +27,10 @@ extern "C"
 #define PC_UART_RX_BUFFER_SIZE 256
 #define ESP_UART_RX_BUFFER_SIZE 1024
 #define ARDUINO_UART_RX_BUFFER_SIZE 256
-#define MOTOR_MAX_SPEED 50
-#define MAX_ROTATION_SPEED 100
-#define ROTATION_KP 2
+#define MOTOR_MAX_SPEED 10
+#define MOTOR_DASH_SPEED 100
+#define MAX_ROTATION_SPEED 30
+#define ROTATION_KP 0.3
 #define ROTATION_KI 0
 #define ROTATION_KD 0.1
 #define MOTOR1_ADDRESS 0x01
@@ -47,12 +48,24 @@ extern "C"
 #define timChannelServo3 TIM_CHANNEL_3
 #define SERVO1_CLOSE 0
 #define SERVO1_OPEN 54
+#define SERVO2_CLOSE 0
+#define SERVO2_OPEN 90
+#define SERVO2_DIRECTION (((SERVO2_OPEN - SERVO2_CLOSE) > 0) ? 1 : -1)
+#define SERVO3_CLOSE 90
+#define SERVO3_OPEN 0
+#define SERVO3_DIRECTION (((SERVO3_OPEN - SERVO3_CLOSE) > 0) ? 1 : -1)
 
 #define right_button 14 //?
 #define left_button 13  //?
 #define down_button 12  //?
 #define up_button 11    //?
 #define brake_button 1
+#define servoReset_button 2
+#define servoRight_button 0
+#define servoLeft_button 3
+#define shot1_button 12
+#define shot2_button 10
+#define dash_button 9
 #define ubuntu_ps4_migisenkai_button 5
 #define ubuntu_ps4_hidarisenkai_button 4
 #define windows_switch_procon_migisenkai_button 10
@@ -123,9 +136,9 @@ extern "C"
         HAL_TIM_PWM_Start(&htimServo1, timChannelServo1);
         __HAL_TIM_SET_COMPARE(&htimServo1, timChannelServo1, SERVO_GetPulse(SERVO1_CLOSE));
         HAL_TIM_PWM_Start(&htimServo2, timChannelServo2);
-        __HAL_TIM_SET_COMPARE(&htimServo2, timChannelServo2, SERVO_GetPulse(0));
+        __HAL_TIM_SET_COMPARE(&htimServo2, timChannelServo2, SERVO_GetPulse(SERVO2_CLOSE));
         HAL_TIM_PWM_Start(&htimServo3, timChannelServo3);
-        __HAL_TIM_SET_COMPARE(&htimServo3, timChannelServo3, SERVO_GetPulse(0));
+        __HAL_TIM_SET_COMPARE(&htimServo3, timChannelServo3, SERVO_GetPulse(SERVO3_CLOSE));
 
         outputDirection = 0.0;
         outputSpeed = 0.0;
@@ -142,65 +155,7 @@ extern "C"
 
         if (now - pre >= 10)
         {
-            static int servo1 = 0;
-            static int servo2 = 0;
-            static int servo3 = 0;
-            unsigned char readFromPc;
-            int PcUartRxTbsError;
-            if (PcUartRxTbs.read(&readFromPc, 1, &PcUartRxTbsError) == 1)
-            {
-                switch (readFromPc)
-                {
-                case 'w':
-                    if (servo1 ==SERVO1_CLOSE)
-                    {
-                        servo1 = SERVO1_OPEN;
-                    }
-                    else
-                    {
-                        servo1 = SERVO1_CLOSE;
-                    }
-                    break;
-                case 'e':
-                    servo2 += 1;
-                    if (servo2 > 90)
-                    {
-                        servo2 = 90;
-                    }
-                    break;
-                case 'd':
-                    servo2 -= 1;
-                    if (servo2 < 0)
-                    {
-                        servo2 = 0;
-                    }
-                    break;
-                case 'r':
-                    servo3 += 1;
-                    if (servo3 > 90)
-                    {
-                        servo3 = 90;
-                    }
-                    break;
-                case 'f':
-                    servo3 -= 1;
-                    if (servo3 < 0)
-                    {
-                        servo3 = 0;
-                    }
-                    break;
-                default:
-                    break;
-                }
-                __HAL_TIM_SET_COMPARE(&htimServo1, timChannelServo1, SERVO_GetPulse(servo1));
-                __HAL_TIM_SET_COMPARE(&htimServo2, timChannelServo2, SERVO_GetPulse(servo2));
-                __HAL_TIM_SET_COMPARE(&htimServo3, timChannelServo3, SERVO_GetPulse(servo3));
-                printf(">servo1:%d\n", servo1);
-                printf(">servo2:%d\n", servo2);
-                printf(">servo3:%d\n", servo3);
-            }
-
-#if (0)
+#if (1)
             // HAL_GPIO_TogglePin(DebugLED_GPIO_Port, DebugLED_Pin);
             // printf(">now:%lu\n", now);
 
@@ -220,7 +175,8 @@ extern "C"
             // printf(">targetYaw:%f\n", targetYaw);
             // printf(">robotYaw:%f\n", robotYaw);
 
-            if (input_button[brake_button] == 1)
+#define DEBUG_STOP_THE_WHEEL false
+            if (input_button[brake_button] == 1 || DEBUG_STOP_THE_WHEEL)
             {
                 outputSpeed = 0;
                 outputRotation = 0;
@@ -554,7 +510,14 @@ extern "C"
             outputSpeed = 0; // ボタンが押されていないときは停止
         }
 
-        outputSpeed *= MOTOR_MAX_SPEED;
+        if (input_button[dash_button] == 1)
+        {
+            outputSpeed *= MOTOR_DASH_SPEED;
+        }
+        else
+        {
+            outputSpeed *= MOTOR_MAX_SPEED;
+        }
 
         if (input_controllerType == ps4_ubuntu)
         {
@@ -576,6 +539,49 @@ extern "C"
             else if (input_button[windows_switch_procon_hidarisenkai_button] == 1)
             {
                 targetYaw = robotYaw - 30;
+            }
+        }
+
+        if (input_button[shot1_button] == 1 && input_button[shot2_button] == 1 && (input_last_button[shot1_button] == 0))
+        {
+            static int servo1 = SERVO1_CLOSE;
+            if (servo1 == SERVO1_CLOSE)
+            {
+                servo1 = SERVO1_OPEN;
+            }
+            else
+            {
+                servo1 = SERVO1_CLOSE;
+            }
+            __HAL_TIM_SET_COMPARE(&htimServo1, timChannelServo1, SERVO_GetPulse(servo1));
+        }
+
+        static int servo2 = SERVO2_CLOSE;
+        static int servo3 = SERVO3_CLOSE;
+        if (input_button[servoReset_button] == 1)
+        {
+            servo2 = SERVO2_CLOSE;
+            servo3 = SERVO3_CLOSE;
+            __HAL_TIM_SET_COMPARE(&htimServo2, timChannelServo2, SERVO_GetPulse(servo2));
+            __HAL_TIM_SET_COMPARE(&htimServo3, timChannelServo3, SERVO_GetPulse(servo3));
+        }
+        else
+        {
+            if (input_button[servoRight_button] == 1)
+            {
+                if (servo2 != SERVO2_OPEN)
+                {
+                    servo2 += SERVO2_DIRECTION;
+                }
+                __HAL_TIM_SET_COMPARE(&htimServo2, timChannelServo2, SERVO_GetPulse(servo2));
+            }
+            if (input_button[servoLeft_button] == 1)
+            {
+                if (servo3 != SERVO3_OPEN)
+                {
+                    servo3 += SERVO3_DIRECTION;
+                }
+                __HAL_TIM_SET_COMPARE(&htimServo3, timChannelServo3, SERVO_GetPulse(servo3));
             }
         }
     } // void controller_read()
