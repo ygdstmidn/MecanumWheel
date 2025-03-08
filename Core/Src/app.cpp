@@ -27,9 +27,9 @@ extern "C"
 #define PC_UART_RX_BUFFER_SIZE 256
 #define ESP_UART_RX_BUFFER_SIZE 1024
 #define ARDUINO_UART_RX_BUFFER_SIZE 256
-#define MOTOR_MAX_SPEED 10
+#define MOTOR_MAX_SPEED 5
 #define MOTOR_DASH_SPEED 100
-#define MAX_ROTATION_SPEED 30
+#define MAX_ROTATION_SPEED 100
 #define ROTATION_KP 0.3
 #define ROTATION_KI 0
 #define ROTATION_KD 0.1
@@ -55,24 +55,43 @@ extern "C"
 #define SERVO3_OPEN 0
 #define SERVO3_DIRECTION (((SERVO3_OPEN - SERVO3_CLOSE) > 0) ? 1 : -1)
 
-#define right_button 14 //?
-#define left_button 13  //?
-#define down_button 12  //?
-#define up_button 11    //?
-#define brake_button 1
-#define servoReset_button 2
-#define servoRight_button 0
-#define servoLeft_button 3
-#define shot1_button 12
-#define shot2_button 10
-#define dash_button 9
-#define ubuntu_ps4_migisenkai_button 5
-#define ubuntu_ps4_hidarisenkai_button 4
-#define windows_switch_procon_migisenkai_button 10
-#define windows_switch_procon_hidarisenkai_button 9
+#define psubu_brake_button 1
+#define psubu_dash_button 9
+#define psubu_servoReset_button 2
+#define psubu_servoRight_button 0
+#define psubu_servoLeft_button 3
+#define psubu_shot1_button 12
+#define psubu_shot2_button 10
+#define psubu_migisenkai_button 5
+#define psubu_hidarisenkai_button 4
+
+#define prowin_brake_button 0
+#define prowin_dash_button 8
+#define prowin_servoReset_button 2
+#define prowin_servoRight_button 1
+#define prowin_servoLeft_button 3
+#define prowin_shot1_button 6
+#define prowin_shot2_button 5
+#define right_button 14 // windows procon のみ
+#define left_button 13  // windows procon のみ
+#define down_button 12  // windows procon のみ
+#define up_button 11    // windows procon のみ
+#define prowin_migisenkai_button 10
+#define prowin_hidarisenkai_button 9
 
 #define move_tate_stick 1
 #define move_yoko_stick 0
+#define input_brake ((input_controllerType == ps4_ubuntu && input_button[psubu_brake_button] == 1) || (input_controllerType == switchProCon_windows && input_button[prowin_brake_button] == 1))
+#define input_dash ((input_controllerType == ps4_ubuntu && input_button[psubu_dash_button] == 1) || (input_controllerType == switchProCon_windows && input_button[prowin_dash_button] == 1))
+#define input_servoReset ((input_controllerType == ps4_ubuntu && input_button[psubu_servoReset_button] == 1) || (input_controllerType == switchProCon_windows && input_button[prowin_servoReset_button] == 1))
+#define input_servoRight ((input_controllerType == ps4_ubuntu && input_button[psubu_servoRight_button] == 1) || (input_controllerType == switchProCon_windows && input_button[prowin_servoRight_button] == 1))
+#define input_servoLeft ((input_controllerType == ps4_ubuntu && input_button[psubu_servoLeft_button] == 1) || (input_controllerType == switchProCon_windows && input_button[prowin_servoLeft_button] == 1))
+#define input_shot1 ((input_controllerType == ps4_ubuntu && input_button[psubu_shot1_button] == 1) || (input_controllerType == switchProCon_windows && input_button[prowin_shot1_button] == 1))
+#define input_shot2 ((input_controllerType == ps4_ubuntu && input_button[psubu_shot2_button] == 1) || (input_controllerType == switchProCon_windows && input_button[prowin_shot2_button] == 1))
+#define input_migisenkai ((input_controllerType == ps4_ubuntu && input_button[psubu_migisenkai_button] == 1) || (input_controllerType == switchProCon_windows && input_button[prowin_migisenkai_button] == 1))
+#define input_hidarisenkai ((input_controllerType == ps4_ubuntu && input_button[psubu_hidarisenkai_button] == 1) || (input_controllerType == switchProCon_windows && input_button[prowin_hidarisenkai_button] == 1))
+#define input_last_shot1 ((input_controllerType == ps4_ubuntu && input_last_button[psubu_shot1_button] == 1) || (input_controllerType == switchProCon_windows && input_last_button[prowin_shot1_button] == 1))
+#define input_last_shot2 ((input_controllerType == ps4_ubuntu && input_last_button[psubu_shot2_button] == 1) || (input_controllerType == switchProCon_windows && input_last_button[prowin_shot2_button] == 1))
 
 #define stick_sikii 0.2
 
@@ -172,11 +191,11 @@ extern "C"
 
             outputRotation = rotationPid.calc(targetYaw, robotYaw, (now - pre) / 1000.0f);
             // printf(">outputRotation:%f\n", outputRotation);
-            // printf(">targetYaw:%f\n", targetYaw);
-            // printf(">robotYaw:%f\n", robotYaw);
+            printf(">targetYaw:%f\n", targetYaw);
+            printf(">robotYaw:%f\n", robotYaw);
 
 #define DEBUG_STOP_THE_WHEEL false
-            if (input_button[brake_button] == 1 || DEBUG_STOP_THE_WHEEL)
+            if (input_brake || DEBUG_STOP_THE_WHEEL)
             {
                 outputSpeed = 0;
                 outputRotation = 0;
@@ -510,7 +529,7 @@ extern "C"
             outputSpeed = 0; // ボタンが押されていないときは停止
         }
 
-        if (input_button[dash_button] == 1)
+        if (input_dash)
         {
             outputSpeed *= MOTOR_DASH_SPEED;
         }
@@ -519,46 +538,38 @@ extern "C"
             outputSpeed *= MOTOR_MAX_SPEED;
         }
 
-        if (input_controllerType == ps4_ubuntu)
+        if (input_migisenkai)
         {
-            if (input_button[ubuntu_ps4_migisenkai_button] == 1)
-            {
-                targetYaw = robotYaw + 30;
-            }
-            else if (input_button[ubuntu_ps4_hidarisenkai_button] == 1)
-            {
-                targetYaw = robotYaw - 30;
-            }
+            targetYaw = robotYaw + 30;
         }
-        else if (input_controllerType == switchProCon_windows)
+        else if (input_hidarisenkai)
         {
-            if (input_button[windows_switch_procon_migisenkai_button] == 1)
-            {
-                targetYaw = robotYaw + 30;
-            }
-            else if (input_button[windows_switch_procon_hidarisenkai_button] == 1)
-            {
-                targetYaw = robotYaw - 30;
-            }
+            targetYaw = robotYaw - 30;
         }
 
-        if (input_button[shot1_button] == 1 && input_button[shot2_button] == 1 && (input_last_button[shot1_button] == 0))
+        if (input_shot1 && input_shot2 && (!input_last_shot1 || !input_last_shot2))
         {
-            static int servo1 = SERVO1_CLOSE;
-            if (servo1 == SERVO1_CLOSE)
+            const uint32_t now = HAL_GetTick();
+            static uint32_t pre = 0;
+            if (now - pre >= 1000)
             {
-                servo1 = SERVO1_OPEN;
+                static int servo1 = SERVO1_CLOSE;
+                if (servo1 == SERVO1_CLOSE)
+                {
+                    servo1 = SERVO1_OPEN;
+                }
+                else
+                {
+                    servo1 = SERVO1_CLOSE;
+                }
+                __HAL_TIM_SET_COMPARE(&htimServo1, timChannelServo1, SERVO_GetPulse(servo1));
+                pre = now;
             }
-            else
-            {
-                servo1 = SERVO1_CLOSE;
-            }
-            __HAL_TIM_SET_COMPARE(&htimServo1, timChannelServo1, SERVO_GetPulse(servo1));
         }
 
         static int servo2 = SERVO2_CLOSE;
         static int servo3 = SERVO3_CLOSE;
-        if (input_button[servoReset_button] == 1)
+        if (input_servoReset)
         {
             servo2 = SERVO2_CLOSE;
             servo3 = SERVO3_CLOSE;
@@ -567,7 +578,7 @@ extern "C"
         }
         else
         {
-            if (input_button[servoRight_button] == 1)
+            if (input_servoRight)
             {
                 if (servo2 != SERVO2_OPEN)
                 {
@@ -575,7 +586,7 @@ extern "C"
                 }
                 __HAL_TIM_SET_COMPARE(&htimServo2, timChannelServo2, SERVO_GetPulse(servo2));
             }
-            if (input_button[servoLeft_button] == 1)
+            if (input_servoLeft)
             {
                 if (servo3 != SERVO3_OPEN)
                 {
