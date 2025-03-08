@@ -31,8 +31,8 @@ extern "C"
 #define MOTOR_DASH_SPEED 100
 #define MAX_ROTATION_SPEED 100
 #define ROTATION_KP 0.3
-#define ROTATION_KI 0
-#define ROTATION_KD 0.1
+#define ROTATION_KI 0.1
+#define ROTATION_KD 0
 #define MOTOR1_ADDRESS 0x01
 #define MOTOR2_ADDRESS 0x02
 #define MOTOR3_ADDRESS 0x03
