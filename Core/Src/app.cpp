@@ -199,7 +199,6 @@ extern "C"
             {
                 outputSpeed = 0;
                 outputRotation = 0;
-                targetYaw = robotYaw;
                 Brake_StopWheel();
             }
             else
@@ -594,6 +593,11 @@ extern "C"
                 }
                 __HAL_TIM_SET_COMPARE(&htimServo3, timChannelServo3, SERVO_GetPulse(servo3));
             }
+        }
+
+        if(input_brake)
+        {
+            targetYaw = robotYaw;
         }
     } // void controller_read()
 
