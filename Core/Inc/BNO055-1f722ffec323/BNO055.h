@@ -188,8 +188,7 @@ typedef struct BNO055
   char pwr_mode;
   float accel_scale, rate_scale, angle_scale;
   int temp_scale;
-  float pre_yaw;
-  int pre_yaw_NAN; //CにNANがないのでこれでNAN判定する
+  int rotation_count;
 
 /** Structures containing 3-axis data for acceleration, rate of turn and magnetic field.
       x,y,z are the scale floating point values and

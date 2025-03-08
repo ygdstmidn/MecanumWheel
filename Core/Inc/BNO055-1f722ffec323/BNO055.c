@@ -9,7 +9,7 @@ void BNO055_init(BNO055 *target, I2C_HandleTypeDef *i2c)
   target->rate_scale = 1.0f / 16.0f;
   target->angle_scale = 1.0f / 16.0f;
   target->temp_scale = 1;
-  target->pre_yaw_NAN = 1; //NANでーす
+  target->rotation_count = 0;
 }
 
 char BNO055_bno_state(BNO055 *target)
@@ -26,21 +26,16 @@ char BNO055_bno_err_state(BNO055 *target)
 
 float BNO055_get_yaw(BNO055 *target)
 {
+  float pre_yaw = target->euler.yaw;
   BNO055_readstring(target, BNO055_EULER_H_LSB_ADDR, 2);
   target->euler.rawyaw = (target->rawdata[1] << 8 | target->rawdata[0]);
-  target->euler.yaw = (float) (target->euler.rawyaw) * target->angle_scale;
-  if (target->pre_yaw_NAN == 1)
-  {
-    target->pre_yaw_NAN = 0;
-  } else
-  {
-    if (target->euler.yaw - target->pre_yaw > 180.0f) //0->360
-      target->euler.yaw -= 360.0f;
-    if (target->euler.yaw - target->pre_yaw < -180.0f) //360->0
-      target->euler.yaw += 360.0f;
-  }
-  target->pre_yaw = target->euler.yaw;
-  return target->euler.yaw;
+  target->euler.yaw = (float)(target->euler.rawyaw) * target->angle_scale;
+
+  if(target->euler.yaw - pre_yaw > 180.0f)//0→360
+    target->rotation_count--;
+  else if(target->euler.yaw - pre_yaw < -180.0f)//360→0
+    target->rotation_count++;
+  return target->euler.yaw + 360.0f * target->rotation_count;
 }
 
 float BNO055_get_z_gyro(BNO055 *target)
@@ -303,13 +298,11 @@ void BNO055_get_angles(BNO055 *target)
   target->euler.yaw = (float) (target->euler.rawyaw) * target->angle_scale;
   target->euler.roll = (float) (target->euler.rawroll) * target->angle_scale;
   target->euler.pitch = (float) (target->euler.rawpitch) * target->angle_scale;
-  if (target->euler.yaw -pre_yaw< -180.0f)
-  {
-    target->euler.yaw += 360.0f;
-  }else if(target->euler.yaw -pre_yaw> 180.0f)
-  {
-    target->euler.yaw -= 360.0f;
-  }
+  if(target->euler.yaw - pre_yaw > 180.0f)//0→360
+    target->rotation_count--;
+  else if(target->euler.yaw - pre_yaw < -180.0f)//360→0
+    target->rotation_count++;
+  return target->euler.yaw + 360.0f * target->rotation_count;
 }
 
 void BNO055_get_temp(BNO055 *target)

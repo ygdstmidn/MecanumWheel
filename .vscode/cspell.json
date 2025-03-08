@@ -23,6 +23,7 @@
         "NUCLEO",
         "NVIC",
         "procon",
+        "psubu",
         "setpowermode",
         "sikii",
         "Uart",
