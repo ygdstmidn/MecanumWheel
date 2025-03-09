@@ -10,6 +10,7 @@ void BNO055_init(BNO055 *target, I2C_HandleTypeDef *i2c)
   target->angle_scale = 1.0f / 16.0f;
   target->temp_scale = 1;
   target->rotation_count = 0;
+  target->rotation_isNAN = 1;
 }
 
 char BNO055_bno_state(BNO055 *target)
@@ -31,10 +32,14 @@ float BNO055_get_yaw(BNO055 *target)
   target->euler.rawyaw = (target->rawdata[1] << 8 | target->rawdata[0]);
   target->euler.yaw = (float)(target->euler.rawyaw) * target->angle_scale;
 
-  if(target->euler.yaw - pre_yaw > 180.0f)//0→360
-    target->rotation_count--;
-  else if(target->euler.yaw - pre_yaw < -180.0f)//360→0
-    target->rotation_count++;
+  if(target->rotation_isNAN == 1) {
+    target->rotation_isNAN = 0;
+  } else {
+    if(target->euler.yaw - pre_yaw > 180.0f)//0→360
+      target->rotation_count--;
+    else if(target->euler.yaw - pre_yaw < -180.0f)//360→0
+      target->rotation_count++;
+  }
   return target->euler.yaw + 360.0f * target->rotation_count;
 }
 
@@ -298,10 +303,15 @@ void BNO055_get_angles(BNO055 *target)
   target->euler.yaw = (float) (target->euler.rawyaw) * target->angle_scale;
   target->euler.roll = (float) (target->euler.rawroll) * target->angle_scale;
   target->euler.pitch = (float) (target->euler.rawpitch) * target->angle_scale;
-  if(target->euler.yaw - pre_yaw > 180.0f)//0→360
-    target->rotation_count--;
-  else if(target->euler.yaw - pre_yaw < -180.0f)//360→0
-    target->rotation_count++;
+
+  if(target->rotation_isNAN == 1) {
+    target->rotation_isNAN = 0;
+  } else {
+    if(target->euler.yaw - pre_yaw > 180.0f)//0→360
+      target->rotation_count--;
+    else if(target->euler.yaw - pre_yaw < -180.0f)//360→0
+      target->rotation_count++;
+  }
 }
 
 void BNO055_get_temp(BNO055 *target)

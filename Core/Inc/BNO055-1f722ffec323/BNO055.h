@@ -189,6 +189,7 @@ typedef struct BNO055
   float accel_scale, rate_scale, angle_scale;
   int temp_scale;
   int rotation_count;
+  int rotation_isNAN;
 
 /** Structures containing 3-axis data for acceleration, rate of turn and magnetic field.
       x,y,z are the scale floating point values and
