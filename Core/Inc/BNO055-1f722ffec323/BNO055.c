@@ -302,7 +302,6 @@ void BNO055_get_angles(BNO055 *target)
     target->rotation_count--;
   else if(target->euler.yaw - pre_yaw < -180.0f)//360→0
     target->rotation_count++;
-  return target->euler.yaw + 360.0f * target->rotation_count;
 }
 
 void BNO055_get_temp(BNO055 *target)

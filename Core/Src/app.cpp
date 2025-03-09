@@ -180,8 +180,7 @@ extern "C"
 
             // float gyro = BNO055_get_z_gyro(&bno);
             // robotYaw -= gyro * (now - pre) / 1000.0f;
-            BNO055_get_angles(&bno);
-            robotYaw = bno.euler.yaw - defaultYaw;
+            robotYaw = BNO055_get_yaw(&bno) - defaultYaw;
             // printf(">robotYaw:%f\n", robotYaw);
 
             esp32_read();
