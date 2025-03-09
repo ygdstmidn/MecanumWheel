@@ -188,7 +188,6 @@ extern "C"
 
             arduino_read();
 
-            outputRotation = rotationPid.calc(targetYaw, robotYaw, (now - pre) / 1000.0f);
             // printf(">outputRotation:%f\n", outputRotation);
             printf(">targetYaw:%f\n", targetYaw);
             printf(">robotYaw:%f\n", robotYaw);
@@ -196,12 +195,14 @@ extern "C"
 #define DEBUG_STOP_THE_WHEEL false
             if (input_brake || DEBUG_STOP_THE_WHEEL)
             {
+                rotationPid.reset();
                 outputSpeed = 0;
                 outputRotation = 0;
                 Brake_StopWheel();
             }
             else
             {
+                outputRotation = rotationPid.calc(targetYaw, robotYaw, (now - pre) / 1000.0f);
                 mecanumCalc();
             }
             // int mecanumError = mecanumCalc();
