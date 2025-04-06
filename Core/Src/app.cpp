@@ -5,6 +5,8 @@ extern "C"
 {
 #endif
 
+#include <Pid/src/Pid.hpp>
+
 #include "main.h"
 #include "can.h"
 #include "i2c.h"
@@ -30,9 +32,9 @@ extern "C"
 #define MOTOR_MAX_SPEED 5
 #define MOTOR_DASH_SPEED 100
 #define MAX_ROTATION_SPEED 100
-#define ROTATION_KP 0.3
-#define ROTATION_KI 0.1
-#define ROTATION_KD 0
+#define ROTATION_KP 1
+#define ROTATION_KI 0
+#define ROTATION_KD 0.08
 #define MOTOR1_ADDRESS 0x01
 #define MOTOR2_ADDRESS 0x02
 #define MOTOR3_ADDRESS 0x03
@@ -109,7 +111,8 @@ extern "C"
     TripleBufferSystemClass espUartRxTbs;
     TripleBufferSystemClass arduinoUartRxTbs;
     BNO055 bno;
-    VelPid rotationPid({{ROTATION_KP, ROTATION_KI, ROTATION_KD}, -MAX_ROTATION_SPEED, MAX_ROTATION_SPEED});
+    // VelPid rotationPid({{ROTATION_KP, ROTATION_KI, ROTATION_KD}, -MAX_ROTATION_SPEED, MAX_ROTATION_SPEED});
+    ygdstmidn::Pid rotationPid({{ROTATION_KP, ROTATION_KI, ROTATION_KD}, -MAX_ROTATION_SPEED, MAX_ROTATION_SPEED});
     float robotYaw = 0.0;
     float targetYaw = 0.0;
     float defaultYaw;
