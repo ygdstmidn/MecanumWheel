@@ -132,6 +132,9 @@ extern "C"
     };
     controllerTypes input_controllerType;
 
+    C610Array c610 = {};
+    VelPid robomasPid1({{0.0001, 0.00001, 0.1}, -0.5, 0.5});
+
     // MARK:setup
     void user_setup(void)
     {
@@ -145,7 +148,26 @@ extern "C"
 
         BNOSetup();
 
-        HAL_CAN_Start(&hcan1);
+        { // CAN設定
+            CAN_FilterTypeDef filter;
+            uint32_t fId = 0x200 << 21;           // フィルターID
+            uint32_t fMask = (0x7F0 << 21) | 0x4; // フィルターマスク
+
+            filter.FilterIdHigh = fId >> 16;                // フィルターIDの上位16ビット
+            filter.FilterIdLow = fId;                       // フィルターIDの下位16ビット
+            filter.FilterMaskIdHigh = fMask >> 16;          // フィルターマスクの上位16ビット
+            filter.FilterMaskIdLow = fMask;                 // フィルターマスクの下位16ビット
+            filter.FilterScale = CAN_FILTERSCALE_32BIT;     // 32モード
+            filter.FilterFIFOAssignment = CAN_FILTER_FIFO0; // FIFO0へ格納
+            filter.FilterBank = 0;
+            filter.FilterMode = CAN_FILTERMODE_IDMASK; // IDマスクモード
+            filter.SlaveStartFilterBank = 14;
+            filter.FilterActivation = ENABLE;
+
+            HAL_CAN_ConfigFilter(&hcan1, &filter);
+            HAL_CAN_Start(&hcan1);
+            HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING);
+        }
 
         espUartRxTbs.init(ESP_UART_RX_BUFFER_SIZE);
         espUartRxTbs.setFunc(__disable_irq, espUartRxTbsAfterSwap);
@@ -192,10 +214,10 @@ extern "C"
             arduino_read();
 
             // printf(">outputRotation:%f\n", outputRotation);
-            printf(">targetYaw:%f\n", targetYaw);
-            printf(">robotYaw:%f\n", robotYaw);
+            // printf(">targetYaw:%f\n", targetYaw);
+            // printf(">robotYaw:%f\n", robotYaw);
 
-#define DEBUG_STOP_THE_WHEEL false
+#define DEBUG_STOP_THE_WHEEL true
             if (input_brake || DEBUG_STOP_THE_WHEEL)
             {
                 rotationPid.reset();
@@ -210,6 +232,13 @@ extern "C"
             }
             // int mecanumError = mecanumCalc();
             // printf("mecanumError=%d%d%d%d\n", mecanumError & 0x08, mecanumError & 0x04, mecanumError & 0x02, mecanumError & 0x01);
+
+            constexpr float targetPos = 100.0f;
+            __C610_parse(c610, 1);
+            float robomasOutput1 = robomasPid1.calc(targetPos, __C610rpm(c610, 1), now - pre);
+            __C610_set_current(c610, 1, robomasOutput1);
+            C610Array_Send(&c610, &hcan1);
+            printf(">robomas:%f\n", __C610rpm(c610, 1));
 #endif
             pre = now;
         }
@@ -598,7 +627,7 @@ extern "C"
             }
         }
 
-        if(input_brake)
+        if (input_brake)
         {
             targetYaw = robotYaw;
         }
@@ -746,6 +775,17 @@ extern "C"
             {
                 // input_arduino = receiveData;
             }
+        }
+    }
+
+    // MARK: CANCallback
+    void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
+    {
+        CAN_RxHeaderTypeDef RxHeader;
+        uint8_t RxData[8];
+        if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &RxHeader, RxData) == HAL_OK)
+        {
+            C610Array_read_packet(&c610, &RxHeader, RxData);
         }
     }
 

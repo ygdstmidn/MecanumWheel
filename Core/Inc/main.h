@@ -40,8 +40,9 @@ extern "C" {
 #include <BNO055-1f722ffec323/BNO055.h>
 #include <DitelMotorDriverController/DitelMotorDriverController.h>
 #include <TripleBufferSystem/TripleBufferSystem.hpp>
-// #include <VelPid/VelPid.hpp>
+#include <VelPid/VelPid.hpp>
 // #include <Pid/src/Pid.hpp>
+#include <C610/C610.h>
 
 /* USER CODE END Includes */
 
