@@ -1,5 +1,7 @@
 // main code here!!
 
+#define DEBUG_STOP_THE_WHEEL true
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -133,7 +135,7 @@ extern "C"
     controllerTypes input_controllerType;
 
     C610Array c610 = {};
-    VelPid robomasPid1({{0.0001, 0.00001, 0.1}, -0.5, 0.5});
+    VelPid robomasPid1({{0.0001, 0.00002, 0.1}, -0.5, 0.5});
 
     // MARK:setup
     void user_setup(void)
@@ -146,7 +148,9 @@ extern "C"
         PcUartRxTbs.setFunc(__disable_irq, PcUartRxTbsAfterSwap);
         HAL_UART_Receive_IT(&huart2, PcUartRxTbs.nextWriteBuffer(), 1); // 1byte
 
+#if (!DEBUG_STOP_THE_WHEEL)
         BNOSetup();
+#endif
 
         { // CAN設定
             CAN_FilterTypeDef filter;
@@ -193,9 +197,12 @@ extern "C"
     {
         const uint32_t now = HAL_GetTick();
         static uint32_t pre = now;
-        // static uint32_t pre2 = now;
+        static uint32_t pre2 = now;
 
         // static int whichPhase = 0;
+
+        constexpr float targetPosMax = 10000.0f;
+        static float targetPos = 0.0f;
 
         if (now - pre >= 10)
         {
@@ -217,7 +224,6 @@ extern "C"
             // printf(">targetYaw:%f\n", targetYaw);
             // printf(">robotYaw:%f\n", robotYaw);
 
-#define DEBUG_STOP_THE_WHEEL true
             if (input_brake || DEBUG_STOP_THE_WHEEL)
             {
                 rotationPid.reset();
@@ -233,39 +239,47 @@ extern "C"
             // int mecanumError = mecanumCalc();
             // printf("mecanumError=%d%d%d%d\n", mecanumError & 0x08, mecanumError & 0x04, mecanumError & 0x02, mecanumError & 0x01);
 
-            constexpr float targetPos = 100.0f;
             __C610_parse(c610, 1);
             float robomasOutput1 = robomasPid1.calc(targetPos, __C610rpm(c610, 1), now - pre);
             __C610_set_current(c610, 1, robomasOutput1);
             C610Array_Send(&c610, &hcan1);
-            printf(">robomas:%f\n", __C610rpm(c610, 1));
+            // printf(">robomas:%d\n", __C610rpm(c610, 1));
+            // printf(">targetPos:%f\n", targetPos);
 #endif
             pre = now;
         }
 
-        // if (now - pre2 >= 3000)
-        // {
-        //     if (whichPhase == 0)
-        //     {
-        //         outputDirection = 180;
-        //     }
-        //     else if (whichPhase == 1)
-        //     {
-        //         outputDirection = 90;
-        //     }
-        //     else if (whichPhase == 2)
-        //     {
-        //         outputDirection = -90;
-        //     }
-        //     else
-        //     {
-        //         outputDirection = 0;
-        //         whichPhase = -1;
-        //     }
-        //     whichPhase++;
-        //     // targetYaw = ((int)targetYaw + 90) % 180;
-        //     pre2 = now;
-        // }
+        if (now - pre2 >= 3000)
+        {
+            if (targetPos == 0.0f)
+            {
+                targetPos = targetPosMax;
+            }
+            else
+            {
+                targetPos = 0;
+            }
+            //     if (whichPhase == 0)
+            //     {
+            //         outputDirection = 180;
+            //     }
+            //     else if (whichPhase == 1)
+            //     {
+            //         outputDirection = 90;
+            //     }
+            //     else if (whichPhase == 2)
+            //     {
+            //         outputDirection = -90;
+            //     }
+            //     else
+            //     {
+            //         outputDirection = 0;
+            //         whichPhase = -1;
+            //     }
+            //     whichPhase++;
+            //     // targetYaw = ((int)targetYaw + 90) % 180;
+            pre2 = now;
+        }
     }
 
     // MARK:_write (for printf)
