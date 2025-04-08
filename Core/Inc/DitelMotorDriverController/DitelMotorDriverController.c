@@ -4,12 +4,7 @@ int DitelMotorDriverRotate(CAN_HandleTypeDef *hcan, uint8_t _motorDriverAddress,
     uint8_t _mode, uint16_t speed)
 {
   static uint8_t lastMode[16];//0000～1111
-  if(lastMode[_motorDriverAddress] == DITEL_MOTOR_FORWARD && _mode == DITEL_MOTOR_REVERSAL)
-  {
-    _mode = DITEL_MOTOR_NEUTRAL;
-    speed = 0;
-  }
-  else if(lastMode[_motorDriverAddress] == DITEL_MOTOR_REVERSAL && _mode == DITEL_MOTOR_FORWARD)
+  if(lastMode[_motorDriverAddress] != _mode && lastMode[_motorDriverAddress] != DITEL_MOTOR_NEUTRAL)
   {
     _mode = DITEL_MOTOR_NEUTRAL;
     speed = 0;
