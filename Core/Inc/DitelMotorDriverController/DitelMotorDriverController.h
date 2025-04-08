@@ -3,10 +3,10 @@
 
 #include "main.h"
 
-#define DITEL_MOTOR_FORWARD   0x23
-#define DITEL_MOTOR_REVERSAL  0x24
-#define DITEL_MOTOR_NEUTRAL   0x01
-#define DITEL_MOTOR_BRAKE     0x02
+#define DITEL_MOTOR_FORWARD   0x11//本当は逆だが，とりあえず(逆でもいいやろ(昔のプロトコルと反転してるのがおかしいねん！！))
+#define DITEL_MOTOR_REVERSAL  0x10
+#define DITEL_MOTOR_NEUTRAL   0x12
+#define DITEL_MOTOR_BRAKE     0x13
 #define DITEL_NONE 0
 
 int DitelMotorDriverRotate(CAN_HandleTypeDef *hcan, uint8_t _motorDriverAddress,

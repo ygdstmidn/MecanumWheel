@@ -35,8 +35,8 @@ extern "C"
 #define ROTATION_KP 1
 #define ROTATION_KI 0
 #define ROTATION_KD 0.08
-#define MOTOR1_ADDRESS 0x01
-#define MOTOR2_ADDRESS 0x02
+#define MOTOR1_ADDRESS 0x04
+#define MOTOR2_ADDRESS 0x07
 #define MOTOR3_ADDRESS 0x03
 #define MOTOR4_ADDRESS 0x04
 #define huartEsp huart3
@@ -169,75 +169,101 @@ extern "C"
     // MARK:loop
     void user_loop(void)
     {
-        const uint32_t now = HAL_GetTick();
-        static uint32_t pre = now;
-        // static uint32_t pre2 = now;
-
-        // static int whichPhase = 0;
-
-        if (now - pre >= 10)
+        for (int i = 0; i < 2000; i++)
         {
-#if (1)
-            // HAL_GPIO_TogglePin(DebugLED_GPIO_Port, DebugLED_Pin);
-            // printf(">now:%lu\n", now);
-
-            // float gyro = BNO055_get_z_gyro(&bno);
-            // robotYaw -= gyro * (now - pre) / 1000.0f;
-            robotYaw = BNO055_get_yaw(&bno) - defaultYaw;
-            // printf(">robotYaw:%f\n", robotYaw);
-
-            esp32_read();
-            controller_read();
-
-            arduino_read();
-
-            // printf(">outputRotation:%f\n", outputRotation);
-            printf(">targetYaw:%f\n", targetYaw);
-            printf(">robotYaw:%f\n", robotYaw);
-
-#define DEBUG_STOP_THE_WHEEL false
-            if (input_brake || DEBUG_STOP_THE_WHEEL)
-            {
-                rotationPid.reset();
-                outputSpeed = 0;
-                outputRotation = 0;
-                Brake_StopWheel();
-            }
-            else
-            {
-                outputRotation = rotationPid.calc(targetYaw, robotYaw, (now - pre) / 1000.0f);
-                mecanumCalc();
-            }
-            // int mecanumError = mecanumCalc();
-            // printf("mecanumError=%d%d%d%d\n", mecanumError & 0x08, mecanumError & 0x04, mecanumError & 0x02, mecanumError & 0x01);
-#endif
-            pre = now;
+            DitelMotorDriverRotate(&hcan1, MOTOR3_ADDRESS,DITEL_MOTOR_FORWARD, i);
+            printf(">motor1:%d\n", i);
+            HAL_Delay(1);
         }
-
-        // if (now - pre2 >= 3000)
-        // {
-        //     if (whichPhase == 0)
-        //     {
-        //         outputDirection = 180;
-        //     }
-        //     else if (whichPhase == 1)
-        //     {
-        //         outputDirection = 90;
-        //     }
-        //     else if (whichPhase == 2)
-        //     {
-        //         outputDirection = -90;
-        //     }
-        //     else
-        //     {
-        //         outputDirection = 0;
-        //         whichPhase = -1;
-        //     }
-        //     whichPhase++;
-        //     // targetYaw = ((int)targetYaw + 90) % 180;
-        //     pre2 = now;
-        // }
+        for (int i = 0; i < 2000; i++)
+        {
+            DitelMotorDriverRotate(&hcan1, MOTOR3_ADDRESS,DITEL_MOTOR_FORWARD, 1999 - i);
+            printf(">motor1:%d\n", 1999-i);
+            HAL_Delay(1);
+        }
+        for (int i = 0; i < 2000; i++)
+        {
+            DitelMotorDriverRotate(&hcan1, MOTOR3_ADDRESS,DITEL_MOTOR_REVERSAL, i);
+            printf(">motor1:%d\n", -1*i);
+            HAL_Delay(1);
+        }
+        for (int i = 0; i < 2000; i++)
+        {
+            DitelMotorDriverRotate(&hcan1, MOTOR3_ADDRESS, DITEL_MOTOR_REVERSAL, (1999 - i));
+            printf(">motor1:%d\n", -1 * (1999 - i));
+            HAL_Delay(1);
+        }
     }
+    //     {
+    //         const uint32_t now = HAL_GetTick();
+    //         static uint32_t pre = now;
+    //         // static uint32_t pre2 = now;
+
+    //         // static int whichPhase = 0;
+
+    //         if (now - pre >= 10)
+    //         {
+    // #if (1)
+    //             // HAL_GPIO_TogglePin(DebugLED_GPIO_Port, DebugLED_Pin);
+    //             // printf(">now:%lu\n", now);
+
+    //             // float gyro = BNO055_get_z_gyro(&bno);
+    //             // robotYaw -= gyro * (now - pre) / 1000.0f;
+    //             robotYaw = BNO055_get_yaw(&bno) - defaultYaw;
+    //             // printf(">robotYaw:%f\n", robotYaw);
+
+    //             esp32_read();
+    //             controller_read();
+
+    //             arduino_read();
+
+    //             // printf(">outputRotation:%f\n", outputRotation);
+    //             // printf(">targetYaw:%f\n", targetYaw);
+    //             // printf(">robotYaw:%f\n", robotYaw);
+
+    // #define DEBUG_STOP_THE_WHEEL false
+    //             if (input_brake || DEBUG_STOP_THE_WHEEL)
+    //             {
+    //                 rotationPid.reset();
+    //                 outputSpeed = 0;
+    //                 outputRotation = 0;
+    //                 Brake_StopWheel();
+    //             }
+    //             else
+    //             {
+    //                 outputRotation = rotationPid.calc(targetYaw, robotYaw, (now - pre) / 1000.0f);
+    //                 mecanumCalc();
+    //             }
+    //             // int mecanumError = mecanumCalc();
+    //             // printf("mecanumError=%d%d%d%d\n", mecanumError & 0x08, mecanumError & 0x04, mecanumError & 0x02, mecanumError & 0x01);
+    // #endif
+    //             pre = now;
+    //         }
+
+    //         // if (now - pre2 >= 3000)
+    //         // {
+    //         //     if (whichPhase == 0)
+    //         //     {
+    //         //         outputDirection = 180;
+    //         //     }
+    //         //     else if (whichPhase == 1)
+    //         //     {
+    //         //         outputDirection = 90;
+    //         //     }
+    //         //     else if (whichPhase == 2)
+    //         //     {
+    //         //         outputDirection = -90;
+    //         //     }
+    //         //     else
+    //         //     {
+    //         //         outputDirection = 0;
+    //         //         whichPhase = -1;
+    //         //     }
+    //         //     whichPhase++;
+    //         //     // targetYaw = ((int)targetYaw + 90) % 180;
+    //         //     pre2 = now;
+    //         // }
+    //     }
 
     // MARK:_write (for printf)
     int _write(int file, char *ptr, int len)
@@ -283,12 +309,16 @@ extern "C"
         int errorCheck = 0;
         errorCheck += DitelMotor(&hcan1, MOTOR1_ADDRESS, motor1Speed);
         errorCheck = errorCheck << 1;
+        HAL_Delay(1);
         errorCheck += DitelMotor(&hcan1, MOTOR2_ADDRESS, motor2Speed);
         errorCheck = errorCheck << 1;
+        HAL_Delay(1);
         errorCheck += DitelMotor(&hcan1, MOTOR3_ADDRESS, motor3Speed);
+        HAL_Delay(1);
         // errorCheck = errorCheck << 1;
         // HAL_Delay(1);
         // errorCheck += DitelMotor(&hcan1, MOTOR4_ADDRESS, motor4Speed);
+        printf("errorCheck = %d\n", errorCheck);
         return errorCheck;
     }
 
@@ -598,7 +628,7 @@ extern "C"
             }
         }
 
-        if(input_brake)
+        if (input_brake)
         {
             targetYaw = robotYaw;
         }
